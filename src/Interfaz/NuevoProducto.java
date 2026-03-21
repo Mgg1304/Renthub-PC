@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -29,6 +30,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class NuevoProducto extends BorderPane {
+	
+	private static final Logger log = Logger.getLogger(NuevoProducto.class.getName());
 
 	Label lblNombre, lblCategoria, lblPrecio, lblStock, lblDescripcion;
 	TextField txtNombre, txtCategoria, txtPrecio, txtStock;
@@ -40,6 +43,8 @@ public class NuevoProducto extends BorderPane {
 	HBox botones;
 
 	public NuevoProducto() {
+		
+		log.info("Mostrando interfaz de nuevo producto.");
 
 		// Label
 		lblNombre = new Label("Nombre del producto");
@@ -103,6 +108,8 @@ public class NuevoProducto extends BorderPane {
 
 	private void seleccionarArchivos() {
 
+		log.info("Abriendo selector de archivos multimedia.");
+		
 	    FileChooser fileChooser = new FileChooser();
 	    fileChooser.setTitle("Seleccionar archivos multimedia");
 
@@ -117,6 +124,7 @@ public class NuevoProducto extends BorderPane {
 	    List<File> seleccion = fileChooser.showOpenMultipleDialog(stage);
 
 	    if (seleccion == null || seleccion.isEmpty()) {
+	    	log.info("No se seleccionaron archivos multimedia.");
 	        return;
 	    }
 
@@ -145,6 +153,8 @@ public class NuevoProducto extends BorderPane {
 	}
 
 	private static ImageView crearPreviewImagen(File archivo) {
+		
+		log.info("Creando vista previa para imagen: " + archivo.getName());
 
 	    Image image = new Image(archivo.toURI().toString(), 120, 120, true, true);
 	    ImageView imageView = new ImageView(image);
@@ -163,6 +173,8 @@ public class NuevoProducto extends BorderPane {
 	}
 	
 	private static MediaView crearPreviewVideo(File archivo) {
+		
+		log.info("Creando vista previa para video: " + archivo.getName());
 
 	    Media media = new Media(archivo.toURI().toString());
 	    MediaPlayer mediaPlayer = new MediaPlayer(media);
@@ -186,6 +198,8 @@ public class NuevoProducto extends BorderPane {
 
 
 	private void nuevoProducto() {
+		
+		log.info("Publicando nuevo producto.");
 
 		try {
 			if (archivosSeleccionados == null || archivosSeleccionados.isEmpty()) {

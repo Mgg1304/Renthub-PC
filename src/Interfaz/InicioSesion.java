@@ -8,7 +8,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import Controller.ApiClient;
 import Modelo.Administrador;
+import Modelo.LoginResponse;
+import Modelo.SesionAdmin;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -27,7 +30,7 @@ public class InicioSesion extends BorderPane {
 	InputStream stream;
 	Image imagen;
 	ImageView logo;
-	Label lblUsuario, lblContrasenya;
+	Label lblUsuario, lblContrasenya, lblMensaje;
 	TextField txtUsuario;
 	PasswordField txtContrasenya;
 	Button btnSesion;
@@ -51,6 +54,7 @@ public class InicioSesion extends BorderPane {
 		lblUsuario.setMaxWidth(300);
 		lblContrasenya = new Label("Contraseña");
 		lblContrasenya.setMaxWidth(300);
+		lblMensaje = new Label("");
 
 		// TextField
 		txtUsuario = new TextField();
@@ -89,77 +93,29 @@ public class InicioSesion extends BorderPane {
 		contenedor.setAlignment(Pos.CENTER);
 		contenedor.setPadding(new Insets(30));
 
-		contenedor.getChildren().addAll(logo, lblUsuario, txtUsuario, lblContrasenya, txtContrasenya, enlaces,
-				btnSesion);
+		contenedor.getChildren().addAll(logo, lblUsuario, txtUsuario, lblContrasenya, txtContrasenya, lblMensaje,
+				enlaces, btnSesion);
 		setCenter(contenedor);
 	}
 
 	// Metodos
 	private void iniciarSesion() {
 
-	    try {
-	        String usuario = txtUsuario.getText();
-	        String password = txtContrasenya.getText();
+		String usuario = txtUsuario.getText();
+		String password = txtContrasenya.getText();
 
-	        if (usuario.isEmpty() || password.isEmpty()) {
-	            System.out.println("Usuario o contraseña vacíos");
-	            return;
-	        }
+		LoginResponse login = ApiClient.login(usuario, password);
 
-	        // Parámetros POST
-	        String params =
-	                "usuario=" + URLEncoder.encode(usuario, "UTF-8") +
-	                "&password=" + URLEncoder.encode(password, "UTF-8");
+		if (login != null) {
 
-	        URL url = new URL("http://localhost:8080/api/admin/login");
-	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			SesionAdmin.setIdActual(login.getId());
+			SesionAdmin.setUsuarioActual(usuario);
+			SesionAdmin.setNombreActual(login.getNombre());
+			
+			 
 
-	        conn.setRequestMethod("POST");
-	        conn.setDoOutput(true);
-	        conn.setRequestProperty(
-	                "Content-Type",
-	                "application/x-www-form-urlencoded"
-	        );
+			SceneManager.mostrarInterfazAdministrador();
 
-	        // Enviar datos
-	        OutputStream os = conn.getOutputStream();
-	        os.write(params.getBytes());
-	        os.flush();
-	        os.close();
-
-	        int responseCode = conn.getResponseCode();
-
-	        if (responseCode == 200) {
-
-	            BufferedReader br = new BufferedReader(
-	                    new InputStreamReader(conn.getInputStream())
-	            );
-
-	            StringBuilder response = new StringBuilder();
-	            String line;
-	            while ((line = br.readLine()) != null) {
-	                response.append(line);
-	            }
-	            br.close();
-
-	            // 🔑 AQUÍ SE PODRÍA PARSEAR JSON (ahora lo hacemos simple)
-	            System.out.println("Login correcto: " + response);
-
-	            // Guardar sesión (temporalmente)
-	            Administrador.nombre = usuario;
-
-	            // Ir a pantalla principal
-	            SceneManager.mostrarInterfazAdministrador();
-
-	        } else {
-	            System.out.println("Usuario o contraseña incorrectos");
-	        }
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        System.out.println("Error al conectar con el backend");
-	    }
+		}
 	}
-
-
 }

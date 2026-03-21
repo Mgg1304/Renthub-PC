@@ -33,12 +33,15 @@ public class AdminInterface extends BorderPane{
 		
 		btnReservas = new Button("Reservas");
 		btnReservas.setMaxWidth(200);
+		btnReservas.setOnAction(e -> SceneManager.mostrarReservas());
 		
 		btnEstadisticas = new Button("Estadísticas");
 		btnEstadisticas.setMaxWidth(200);
+		btnEstadisticas.setOnAction(e -> SceneManager.mostrarEstadisticas());
 		
 		btnPerfil = new Button("Perfil");
 		btnPerfil.setMaxWidth(200);
+		btnPerfil.setOnAction(e -> SceneManager.mostrarPerfil());
 		
 		//Layout
 		contenedor = new VBox(20);
