@@ -7,9 +7,12 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import Controller.ApiClient;
+import Modelo.SesionAdmin;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -38,7 +41,7 @@ public class NuevoProducto extends BorderPane {
 	TextArea txtDescripcion;
 	Button btnNuevoProducto, btnAñadirFotos;
 	FlowPane previewPane;
-	List<File> archivosSeleccionados;
+	List<File> archivosSeleccionados = new ArrayList<>();
 	VBox contenedor;
 	HBox botones;
 
@@ -53,7 +56,7 @@ public class NuevoProducto extends BorderPane {
 		lblCategoria = new Label("Categoria del producto");
 		lblCategoria.setMaxWidth(300);
 
-		lblPrecio = new Label("Preio por dia del producto");
+		lblPrecio = new Label("Precio por dia del producto");
 		lblPrecio.setMaxWidth(300);
 
 		lblStock = new Label("Stock del producto");
@@ -101,7 +104,7 @@ public class NuevoProducto extends BorderPane {
 		contenedor.setAlignment(Pos.CENTER);
 		contenedor.setPadding(new Insets(20));
 		contenedor.getChildren().addAll(lblNombre, txtNombre, lblCategoria, txtCategoria, lblPrecio, txtPrecio,
-				lblStock, txtStock, lblDescripcion, txtDescripcion, previewPane, btnNuevoProducto);
+				lblStock, txtStock, lblDescripcion, txtDescripcion, previewPane, btnAñadirFotos, btnNuevoProducto);
 
 		setCenter(contenedor);
 	}
@@ -116,7 +119,7 @@ public class NuevoProducto extends BorderPane {
 	    fileChooser.getExtensionFilters().add(
 	        new FileChooser.ExtensionFilter(
 	            "Imágenes y vídeos",
-	            "*.png", "*.jpg", "*.jpeg", "*.mp4", "*.mov"
+	            "*.png", "*.jpg", "*.jpeg", "*.mp4", "*.mov", "*.webp"
 	        )
 	    );
 
@@ -198,92 +201,49 @@ public class NuevoProducto extends BorderPane {
 
 
 	private void nuevoProducto() {
-		
-		log.info("Publicando nuevo producto.");
 
-		try {
-			if (archivosSeleccionados == null || archivosSeleccionados.isEmpty()) {
-				System.out.println("Debes seleccionar al menos un archivo multimedia");
-				return;
-			}
+	    log.info("Publicando nuevo producto.");
 
-			// Datos del formulario
-			String nombre = txtNombre.getText();
-			String categoria = txtCategoria.getText();
-			String descripcion = txtDescripcion.getText();
-			double precioDia = Double.parseDouble(txtPrecio.getText());
-			int stock = Integer.parseInt(txtStock.getText());
-			long adminId = 1L;
+	    try {
+	        if (archivosSeleccionados == null || archivosSeleccionados.isEmpty()) {
+	            System.out.println("Debes seleccionar al menos un archivo multimedia");
+	            return;
+	        }
 
-			String boundary = "===" + System.currentTimeMillis() + "===";
-			String LINE_FEED = "\r\n";
+	        // Datos del formulario
+	        String nombre = txtNombre.getText();
+	        String categoria = txtCategoria.getText();
+	        String descripcion = txtDescripcion.getText();
+	        double precioDia = Double.parseDouble(txtPrecio.getText());
+	        int stock = Integer.parseInt(txtStock.getText());
+	        long adminId = SesionAdmin.getIdActual();
 
-			URL url = new URL("http://localhost:8080/api/productos");
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setUseCaches(false);
-			connection.setDoOutput(true);
-			connection.setDoInput(true);
-			connection.setRequestMethod("POST");
-			connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+	        log.info("Datos del nuevo producto - Nombre: " + nombre +
+	                ", Categoria: " + categoria +
+	                ", Precio: " + precioDia +
+	                ", Stock: " + stock);
 
-			OutputStream outputStream = connection.getOutputStream();
-			PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
+	        
+	        boolean ok = ApiClient.crearProducto(
+	                nombre,
+	                descripcion,
+	                categoria,
+	                precioDia,
+	                stock,
+	                adminId,
+	                archivosSeleccionados
+	        );
 
-			// Campos de texto
-			escribirCampo(writer, boundary, "nombre", nombre);
-			escribirCampo(writer, boundary, "descripcion", descripcion);
-			escribirCampo(writer, boundary, "categoria", categoria);
-			escribirCampo(writer, boundary, "precioDia", String.valueOf(precioDia));
-			escribirCampo(writer, boundary, "stock", String.valueOf(stock));
-			escribirCampo(writer, boundary, "adminId", String.valueOf(adminId));
+	        if (ok) {
+	            System.out.println("Producto publicado correctamente");
+	            SceneManager.mostrarInventario();
+	        } else {
+	            System.out.println("Error al publicar producto");
+	        }
 
-			// Archivos multimedia
-			for (File archivo : archivosSeleccionados) {
-
-				writer.append("--").append(boundary).append(LINE_FEED);
-				writer.append("Content-Disposition: form-data; name=\"files\"; filename=\"").append(archivo.getName())
-						.append("\"").append(LINE_FEED);
-
-				String contentType = Files.probeContentType(archivo.toPath());
-				if (contentType == null) {
-					contentType = "application/octet-stream";
-				}
-
-				writer.append("Content-Type: ").append(contentType).append(LINE_FEED);
-				writer.append(LINE_FEED);
-				writer.flush();
-
-				Files.copy(archivo.toPath(), outputStream);
-				outputStream.flush();
-
-				writer.append(LINE_FEED);
-				writer.flush();
-			}
-
-			// Fin
-			writer.append("--").append(boundary).append("--").append(LINE_FEED);
-			writer.close();
-
-			int responseCode = connection.getResponseCode();
-
-			if (responseCode == HttpURLConnection.HTTP_OK) {
-				System.out.println("Producto publicado correctamente");
-			} else {
-				System.out.println("Error al publicar producto. Código: " + responseCode);
-			}
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-
-	private void escribirCampo(PrintWriter writer, String boundary, String nombre, String valor) {
-		String LINE_FEED = "\r\n";
-		writer.append("--").append(boundary).append(LINE_FEED);
-		writer.append("Content-Disposition: form-data; name=\"").append(nombre).append("\"").append(LINE_FEED);
-		writer.append(LINE_FEED);
-		writer.append(valor).append(LINE_FEED);
-		writer.flush();
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	    }
 	}
 
 }

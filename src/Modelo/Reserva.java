@@ -1,22 +1,27 @@
 package Modelo;
 
 public class Reserva {
-	
+
 	// Atributos
 	private int id;
-	private int id_usuario;
-	private int id_producto;
+	private Usuario usuario;
+	private Producto producto;
 	private String fechaInicio;
 	private String fechaFin;
 	private String estado;
 	private String fechaCreacion;
 
-	// Constructor
-	public Reserva(int id, int id_usuario, int id_producto, String fechaInicio, String fechaFin,
-			String estado, String fechaCreacion) {
+	// Constructor vacío
+	public Reserva() {
+	}
+
+	// Constructor completo
+	public Reserva(int id, Usuario usuario, Producto producto, String fechaInicio,
+			String fechaFin, String estado, String fechaCreacion) {
+		
 		this.id = id;
-		this.id_usuario = id_usuario;
-		this.id_producto = id_producto;
+		this.usuario = usuario;
+		this.producto = producto;
 		this.fechaInicio = fechaInicio;
 		this.fechaFin = fechaFin;
 		this.estado = estado;
@@ -32,20 +37,20 @@ public class Reserva {
 		this.id = id;
 	}
 
-	public int getUsuario() {
-		return id_usuario;
+	public Usuario getUsuario() {
+		return usuario;
 	}
 
-	public void setUsuario(int id_usuario) {
-		this.id_usuario = id_usuario;
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
 	}
 
-	public int getIdProducto() {
-		return id_producto;
+	public Producto getProducto() {
+		return producto;
 	}
 
-	public void setIdProducto(int id_producto) {
-		this.id_producto = id_producto;
+	public void setProducto(Producto producto) {
+		this.producto = producto;
 	}
 
 	public String getFechaInicio() {
@@ -80,14 +85,15 @@ public class Reserva {
 		this.fechaCreacion = fechaCreacion;
 	}
 
-	
-	//Metodos
+	// Métodos
 	@Override
 	public String toString() {
-		return "Reserva [id=" + id + ", usuario=" + id_usuario + ", producto=" + id_producto
-				+ ", fechaInicio=" + fechaInicio + ", fechaFin=" + fechaFin + ", estado=" + estado
-				+ ", fechaCreacion=" + fechaCreacion + "]";
+		return "Reserva [id=" + id + 
+				", usuario=" + usuario + 
+				", producto=" + producto + 
+				", fechaInicio=" + fechaInicio + 
+				", fechaFin=" + fechaFin + 
+				", estado=" + estado + 
+				", fechaCreacion=" + fechaCreacion + "]";
 	}
-	
-	
 }

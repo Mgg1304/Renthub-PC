@@ -22,7 +22,7 @@ public class AdminInterface extends BorderPane{
 		logo = new ImageView(imagen);
 
 		logo.setFitWidth(200);
-		logo.setFitHeight(200);
+		logo.setFitHeight(200); 
 		logo.setPreserveRatio(true);
 		logo.setSmooth(true);
 		

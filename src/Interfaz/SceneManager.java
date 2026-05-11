@@ -1,5 +1,7 @@
 package Interfaz;
 
+import Modelo.Producto;
+import Modelo.Reserva;
 import javafx.scene.Scene;
 
 public class SceneManager {
@@ -44,5 +46,17 @@ public class SceneManager {
 	
 	public static void mostrarNuevoProducto() {
 		scene.setRoot(new NuevoProducto());
+	}
+
+	public static void mostrarDetalleProducto(Producto producto) {
+		scene.setRoot(new DetalleArticulo(producto));
+	}
+
+	public static void mostrarDetalleReserva(Reserva reserva) {
+		if (reserva.getEstado().equalsIgnoreCase("PENDIENTE")) {
+			scene.setRoot(new DetalleReservaPendiente(reserva));
+		} else {
+			scene.setRoot(new DetalleReserva(reserva));
+		}
 	}
 }

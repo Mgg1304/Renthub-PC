@@ -85,7 +85,7 @@ public class CrearCuenta extends BorderPane {
 		String nombre = txtNombre.getText();
 		String password = txtContrasenya.getText();
 
-		boolean creado = ApiClient.register(usuario, nombre, password);
+		boolean creado = ApiClient.registerAdmin(usuario, nombre, password);
 
 		if (creado) {
 			lblMensaje.setText("Cuenta creada correctamente");

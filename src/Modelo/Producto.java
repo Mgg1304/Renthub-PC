@@ -1,14 +1,28 @@
 package Modelo;
 
+import java.util.logging.Logger;
+
+import com.google.gson.annotations.SerializedName;
+
 public class Producto {
 
+	private static final Logger log = Logger.getLogger(Producto.class.getName());
+
 	// Atributos
+	@SerializedName("idProducto")
 	private int id;
+
 	private String nombre;
+	
 	private String descripcion;
+	
 	private String categoria;
+	
+	@SerializedName("precioDia")
 	private double precioPorDia;
+	
 	private int stock;
+	
 	private Double valoracionMedia;
 
 	// Constructor
@@ -20,6 +34,7 @@ public class Producto {
 		this.precioPorDia = precioPorDia;
 		this.stock = stock;
 		this.valoracionMedia = null;
+		log.info("Producto creado: " + this);
 	}
 
 	public Producto(int id, String nombre, String descripcion, String categoria, double precioPorDia, int stock,
@@ -31,6 +46,7 @@ public class Producto {
 		this.precioPorDia = precioPorDia;
 		this.stock = stock;
 		this.valoracionMedia = valoracionMedia;
+		log.info("Producto creado con valoración: " + this);
 	}
 
 	// Getters y Setters

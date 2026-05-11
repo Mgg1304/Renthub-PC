@@ -1,0 +1,133 @@
+package Interfaz;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.logging.Logger;
+
+import Controller.ApiClient;
+import Modelo.Producto;
+import Modelo.Reserva;
+
+public class DetalleReserva extends BorderPane {
+
+	private static Logger log = Logger.getLogger(DetalleReserva.class.getName());
+
+	private int indiceImagen = 0;
+	private List<String> imagenes;
+	
+	protected HBox botonesBox;
+
+	private ImageView imageView;
+	
+	public DetalleReserva() {
+		
+	}
+
+	public DetalleReserva(Reserva reserva) {
+
+		log.info("Mostrando detalle de la reserva con ID: " + reserva.getId());
+
+		imagenes = ApiClient.obtenerUrlsImagenesPorProducto(reserva.getProducto().getId());
+
+		imageView = new ImageView();
+		imageView.setFitWidth(400);
+		imageView.setFitHeight(300);
+		imageView.setPreserveRatio(true);
+
+		if (!imagenes.isEmpty()) {
+			mostrarImagen();
+		}
+
+		Button btnPrev = new Button("<");
+		Button btnNext = new Button(">");
+
+		btnPrev.setOnAction(e -> {
+			if (indiceImagen > 0) {
+				indiceImagen--;
+				mostrarImagen();
+			}
+		});
+
+		btnNext.setOnAction(e -> {
+			if (indiceImagen < imagenes.size() - 1) {
+				indiceImagen++;
+				mostrarImagen();
+			}
+		});
+
+		StackPane carrusel = new StackPane(imageView, btnPrev, btnNext);
+		StackPane.setAlignment(btnPrev, Pos.CENTER_LEFT);
+		StackPane.setAlignment(btnNext, Pos.CENTER_RIGHT);
+
+		VBox info = new VBox(10);
+
+		// Nombre producto
+		Label nombre = new Label(reserva.getProducto().getNombre());
+		nombre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+		// Estado reserva
+		Label estado = new Label("Estado: " + reserva.getEstado());
+		estado.setStyle("""
+				-fx-font-size: 14px;
+				-fx-font-weight: bold;
+				-fx-text-fill: #2196F3;
+				""");
+
+		// Precio
+		Label precioLabel = new Label(reserva.getProducto().getPrecioPorDia() + " €/día");
+		precioLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: green;");
+
+		// Fechas
+
+		Label fechaInicio = new Label(
+				"Inicio: " + reserva.getFechaInicio());
+
+		Label fechaFin = new Label(
+				"Fin: " + reserva.getFechaFin());
+
+		// Categoría
+		Label categoriaLabel = new Label("Categoría: " + reserva.getProducto().getCategoria());
+		categoriaLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: gray;");
+
+		// Descripción
+		Label descripcionLabel = new Label(reserva.getProducto().getDescripcion());
+		descripcionLabel.setWrapText(true);
+
+		// Contenedor fechas
+		HBox fechasBox = new HBox(20, fechaInicio, fechaFin);
+
+		// Añadir información
+		info.getChildren().addAll(
+				nombre,
+				estado,
+				precioLabel,
+				fechasBox,
+				categoriaLabel,
+				descripcionLabel
+		);
+				
+		Button btnVolver = new Button("Volver");
+		btnVolver.setOnAction(e -> SceneManager.mostrarReservas());
+		
+		botonesBox = new HBox(15, btnVolver);
+
+		VBox contenedor = new VBox(15, carrusel, info, botonesBox);
+		contenedor.setStyle("-fx-padding: 20;");
+
+		this.setCenter(contenedor);
+	}
+
+	private void mostrarImagen() {
+		if (imagenes != null && !imagenes.isEmpty()) {
+			Image img = new Image(imagenes.get(indiceImagen), true);
+			imageView.setImage(img);
+		}
+	}
+}

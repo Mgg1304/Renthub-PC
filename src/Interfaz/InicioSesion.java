@@ -104,7 +104,7 @@ public class InicioSesion extends BorderPane {
 		String usuario = txtUsuario.getText();
 		String password = txtContrasenya.getText();
 
-		LoginResponse login = ApiClient.login(usuario, password);
+		LoginResponse login = ApiClient.loginAdmin(usuario, password);
 
 		if (login != null) {
 
@@ -112,8 +112,6 @@ public class InicioSesion extends BorderPane {
 			SesionAdmin.setUsuarioActual(usuario);
 			SesionAdmin.setNombreActual(login.getNombre());
 			
-			 
-
 			SceneManager.mostrarInterfazAdministrador();
 
 		}
