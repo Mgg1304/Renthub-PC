@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Modelo.Producto;
+import Modelo.Reserva;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
@@ -10,50 +11,45 @@ import java.util.List;
 
 public class ProductosView extends VBox {
 
-    private FlowPane flowOfertado = new FlowPane();
-    private FlowPane flowAlquilado = new FlowPane();
+	private FlowPane flowOfertado = new FlowPane();
+	private FlowPane flowEnCurso = new FlowPane();
 
-    public ProductosView() {
+	public ProductosView() {
 
-        setSpacing(20);
-        setPadding(new Insets(20));
+		setSpacing(20);
+		setPadding(new Insets(20));
 
-        flowOfertado.setHgap(20);
-        flowOfertado.setVgap(20);
+		flowOfertado.setHgap(20);
+		flowOfertado.setVgap(20);
 
-        flowAlquilado.setHgap(20);
-        flowAlquilado.setVgap(20);
+		flowEnCurso.setHgap(20);
+		flowEnCurso.setVgap(20);
 
-        VBox ofertadoBox = new VBox(10,
-                new Label("OFERTADO"),
-                flowOfertado
-        );
+		VBox ofertadoBox = new VBox(10, new Label("OFERTADO"), flowOfertado);
 
-        VBox alquiladoBox = new VBox(10,
-                new Label("ALQUILADO"),
-                flowAlquilado
-        );
+		VBox alquiladoBox = new VBox(10, new Label("EN CURSO"), flowEnCurso);
 
-        getChildren().addAll(ofertadoBox, alquiladoBox);
-    }
+		getChildren().addAll(ofertadoBox, alquiladoBox);
+	}
 
-    public void cargarProductos(List<Producto> productos) {
+	public void cargarArticulos(List<Producto> productos, List<Reserva> reservas) {
 
-        flowOfertado.getChildren().clear();
-        flowAlquilado.getChildren().clear();
+		flowOfertado.getChildren().clear();
+		flowEnCurso.getChildren().clear();
 
-        for (Producto p : productos) {
-
-            ProductoCard card = new ProductoCard(p);
-
-            // lógica simple (puedes cambiarla luego)
-            if (p.getStock() > 0) {
-                flowOfertado.getChildren().add(card);
-            } else {
-                flowAlquilado.getChildren().add(card);
+		for (Producto p : productos) {
+			ProductoCard card = new ProductoCard(p);
+			if (p.getStock() > 0) {
+				flowOfertado.getChildren().add(card);
+			}
+		}
+		
+		for (Reserva r : reservas) {
+            if (r.getEstado().equalsIgnoreCase("EN_CURSO")) {
+                ReservaCard card = new ReservaCard(r);
+                flowEnCurso.getChildren().add(card);
             }
         }
-    }
-    
-    
+
+	}
 }

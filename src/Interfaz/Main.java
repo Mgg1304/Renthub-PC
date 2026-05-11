@@ -26,7 +26,6 @@ public class Main extends Application {
         SceneManager.mostrarInicioSesion();
         
         log.info("Aplicación iniciada correctamente.");
-//        SceneManager.mostrarInventario();
     }
 	
 }

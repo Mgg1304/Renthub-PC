@@ -61,18 +61,17 @@ public class Inventario extends BorderPane {
 		new Thread(() -> {
 
 		    var productos = ApiClient.obtenerProductosPorAdmin(SesionAdmin.getIdActual());
+		    var reservas = ApiClient.obtenerReservasPorAdmin(SesionAdmin.getIdActual());
 
 		    log.info("Productos recibidos del backend para el administrador con ID: " + SesionAdmin.getIdActual() + ". Cantidad: " + (productos != null ? productos.size() : "null"));
 
 		    Platform.runLater(() -> {
 		    	log.info("Entrando en runLater");
-		        productosView.cargarProductos(productos);
-		        log.info("Productos cargados en la vista para el administrador con ID: " + SesionAdmin.getIdActual());
+		        productosView.cargarArticulos(productos, reservas);
+		        log.info("Productos y reservas en curso cargadas en la vista para el administrador con ID: " + SesionAdmin.getIdActual());
 		    });
 
 		}).start();
-		
-		
 		
 	}
 }
