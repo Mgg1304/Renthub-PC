@@ -46,7 +46,15 @@ public class DetalleReserva extends BorderPane {
 		}
 
 		Button btnPrev = new Button("<");
+		btnPrev.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
 		Button btnNext = new Button(">");
+		btnNext.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 
 		btnPrev.setOnAction(e -> {
 			if (indiceImagen > 0) {
@@ -115,6 +123,10 @@ public class DetalleReserva extends BorderPane {
 				
 		Button btnVolver = new Button("Volver");
 		btnVolver.setOnAction(e -> SceneManager.mostrarReservas());
+		btnVolver.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
 		
 		botonesBox = new HBox(15, btnVolver);
 

@@ -87,6 +87,10 @@ public class InicioSesion extends BorderPane {
 		btnSesion.setLayoutX(50);
 		btnSesion.setLayoutY(50);
 		btnSesion.setOnAction(e -> iniciarSesion());
+		btnSesion.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 
 		// Layout
 		contenedor = new VBox(12);

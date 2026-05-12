@@ -28,6 +28,10 @@ public class Inventario extends BorderPane {
 		// Header
 		header = new Header();
 		header.btnInventario.setOnAction(null);
+		header.btnInventario.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
 		setTop(header);
  
 		// Body
@@ -35,6 +39,10 @@ public class Inventario extends BorderPane {
 		btnNuevoProducto = new Button("Nuevo producto");
 		btnNuevoProducto.maxWidth(300);
 		btnNuevoProducto.setOnAction(e -> SceneManager.mostrarNuevoProducto());
+		btnNuevoProducto.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 
 		// Vista productos
 		productosView = new ProductosView();

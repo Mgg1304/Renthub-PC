@@ -14,6 +14,10 @@ public class DetalleReservaPendiente extends DetalleReserva {
 		super(reserva);
 		
 		Button btnConfirmar = new Button("Confirmar Reserva");
+		btnConfirmar.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 		btnConfirmar.setOnAction(e -> {
 			// Lógica para confirmar la reserva
 			log.info("Confirmando reserva con ID: " + reserva.getId());

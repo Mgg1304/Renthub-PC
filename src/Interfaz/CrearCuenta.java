@@ -68,6 +68,7 @@ public class CrearCuenta extends BorderPane {
 		btnCrearCuenta.setLayoutX(50);
 		btnCrearCuenta.setLayoutY(50);
 		btnCrearCuenta.setOnAction(e -> crearCuenta());
+		btnCrearCuenta.styleProperty().set("-fx-background-color: #31c533; -fx-text-fill: white;");
 
 		// Layout
 		contenedor = new VBox(12);

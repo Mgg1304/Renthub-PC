@@ -27,6 +27,10 @@ public class Reservas extends BorderPane {
 		// Header
 		header = new Header();
 		header.btnReservas.setOnAction(null);
+		header.btnReservas.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 		setTop(header);
 
 		// Vista reservas

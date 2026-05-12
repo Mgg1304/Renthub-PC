@@ -13,17 +13,18 @@ public class Producto {
 	private int id;
 
 	private String nombre;
-	
+
 	private String descripcion;
-	
+
 	private String categoria;
-	
+
 	@SerializedName("precioDia")
 	private double precioPorDia;
-	
+
 	private int stock;
-	
-	private Double valoracionMedia;
+
+	@SerializedName(value = "ratingAvg")
+	private double valoracionMedia;
 
 	// Constructor
 	public Producto(int id, String nombre, String descripcion, String categoria, double precioPorDia, int stock) {
@@ -33,12 +34,12 @@ public class Producto {
 		this.categoria = categoria;
 		this.precioPorDia = precioPorDia;
 		this.stock = stock;
-		this.valoracionMedia = null;
+		this.valoracionMedia = 0.0;
 		log.info("Producto creado: " + this);
 	}
 
 	public Producto(int id, String nombre, String descripcion, String categoria, double precioPorDia, int stock,
-			Double valoracionMedia) {
+			double valoracionMedia) {
 		this.id = id;
 		this.nombre = nombre;
 		this.descripcion = descripcion;
@@ -98,12 +99,20 @@ public class Producto {
 		this.stock = stock;
 	}
 
+	
+
 	public Double getValoracionMedia() {
 		return valoracionMedia;
 	}
 
 	public void setValoracionMedia(Double valoracionMedia) {
-		this.valoracionMedia = valoracionMedia;
+		this.valoracionMedia = valoracionMedia != null ? valoracionMedia : 0.0;
+	}
+
+	@Override
+	public String toString() {
+		return "Producto{" + "id=" + id + ", nombre='" + nombre + '\'' + ", precioPorDia=" + precioPorDia
+				+ ", valoracionMedia=" + valoracionMedia + '}';
 	}
 
 }

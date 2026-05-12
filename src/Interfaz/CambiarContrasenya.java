@@ -63,6 +63,10 @@ public class CambiarContrasenya extends BorderPane {
 		btnCambiarContrasenya = new Button("Cambiar Contraseña");
 		btnCambiarContrasenya.setMaxWidth(300);
 		btnCambiarContrasenya.setOnAction(e -> cambiarContrasenya());
+		btnCambiarContrasenya.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 
 		// Contenedor
 		contenedor = new VBox(10);

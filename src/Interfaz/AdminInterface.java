@@ -30,18 +30,34 @@ public class AdminInterface extends BorderPane{
 		btnInventario = new Button("Inventario");
 		btnInventario.setMaxWidth(200);
 		btnInventario.setOnAction(e -> SceneManager.mostrarInventario());
+		btnInventario.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 		
 		btnReservas = new Button("Reservas");
 		btnReservas.setMaxWidth(200);
 		btnReservas.setOnAction(e -> SceneManager.mostrarReservas());
+		btnReservas.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
 		
 		btnEstadisticas = new Button("Estadísticas");
 		btnEstadisticas.setMaxWidth(200);
 		btnEstadisticas.setOnAction(e -> SceneManager.mostrarEstadisticas());
+		btnEstadisticas.setStyle(
+			    "-fx-background-color: #31c533;" +
+			    "-fx-text-fill: white;"
+			);
 		
 		btnPerfil = new Button("Perfil");
 		btnPerfil.setMaxWidth(200);
 		btnPerfil.setOnAction(e -> SceneManager.mostrarPerfil());
+		btnPerfil.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
 		
 		//Layout
 		contenedor = new VBox(20);

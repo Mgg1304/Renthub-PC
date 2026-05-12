@@ -20,6 +20,7 @@ import Modelo.LoginResponse;
 import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.Usuario;
+import Modelo.Valoracion;
 
 public class ApiClient {
 
@@ -340,6 +341,41 @@ public class ApiClient {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			return List.of();
+		}
+	}
+
+	// ---------------- OBTENER VALORACIONES POR PRODUCTO ----------------
+
+	public static List<Valoracion> obtenerValoracionesPorProducto(int productoId) {
+
+		log.info("Solicitando valoraciones del producto: " + productoId);
+
+		try {
+
+			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/valoraciones/producto/" + productoId))
+					.GET().build();
+
+			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+			if (response.statusCode() == 200) {
+
+				log.info("JSON valoraciones recibido: " + response.body());
+
+				Type listType = new TypeToken<List<Valoracion>>() {
+				}.getType();
+
+				List<Valoracion> valoraciones = gson.fromJson(response.body(), listType);
+
+				return valoraciones != null ? valoraciones : List.of();
+			}
+
+			log.warning("No se pudieron obtener valoraciones del producto " + productoId + ". Codigo: "
+					+ response.statusCode());
+			return List.of();
+
+		} catch (Exception e) {
+			log.warning("Error al obtener valoraciones del producto " + productoId + ": " + e.getMessage());
 			return List.of();
 		}
 	}
