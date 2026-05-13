@@ -10,6 +10,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
@@ -95,6 +98,24 @@ public class Estadisticas extends BorderPane {
 								r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto"));
 
 				Map<Integer, Double> valoracionMediaPorProductoId = new HashMap<>();
+				Set<Integer> productosSinValoracion = reservas.stream().filter(Objects::nonNull)
+						.map(Reserva::getProducto).filter(Objects::nonNull)
+						.filter(p -> p.getValoracionMedia() == null || p.getValoracionMedia() == 0.0)
+						.map(Producto::getId).collect(Collectors.toSet());
+
+				Map<Integer, Double> valoracionesCargadas = new ConcurrentHashMap<>();
+				List<CompletableFuture<Void>> futures = productosSinValoracion.stream()
+						.map(productoId -> CompletableFuture.runAsync(() -> {
+							ApiResult<Producto> productoResult = ApiClient.obtenerProducto(productoId);
+							if (productoResult.isOk() && productoResult.getData() != null) {
+								valoracionesCargadas.put(productoId, productoResult.getData().getValoracionMedia());
+							} else {
+								log.warning("No se pudo obtener producto " + productoId + ": "
+										+ productoResult.getTechnicalMessage());
+							}
+						}, AsyncExecutor.io())).toList();
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+				valoracionMediaPorProductoId.putAll(valoracionesCargadas);
 
 				List<ValoracionMediaRow> valoracionesMedias = reservasPorProducto.entrySet().stream().map(entry -> {
 					String producto = entry.getKey();
@@ -124,9 +145,7 @@ public class Estadisticas extends BorderPane {
 			tablaValoraciones.setItems(FXCollections.observableArrayList());
 		});
 
-		Thread hiloCarga = new Thread(cargaTask);
-		hiloCarga.setDaemon(true);
-		hiloCarga.start();
+		AsyncExecutor.io().submit(cargaTask);
 	}
 
 	private static class EstadisticasData {
@@ -239,18 +258,6 @@ public class Estadisticas extends BorderPane {
 		}
 
 		Double valoracion = valoracionEnReserva;
-		if (valoracion == null || valoracion == 0.0) {
-			try {
-				ApiResult<Producto> productoResult = ApiClient.obtenerProducto(productoId);
-				if (productoResult.isOk() && productoResult.getData() != null) {
-					valoracion = productoResult.getData().getValoracionMedia();
-				} else {
-					log.warning("No se pudo obtener producto " + productoId + ": " + productoResult.getTechnicalMessage());
-				}
-			} catch (Exception e) {
-				log.warning("No se pudo obtener valoracion media del producto " + productoId);
-			}
-		}
 
 		cacheValoraciones.put(productoId, valoracion);
 		return valoracion;

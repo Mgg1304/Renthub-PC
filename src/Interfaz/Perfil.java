@@ -4,6 +4,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
@@ -116,20 +118,28 @@ public class Perfil extends BorderPane {
 								r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto",
 								(nombreA, nombreB) -> nombreA));
 
+				Map<Integer, List<Valoracion>> valoracionesPorProducto = new ConcurrentHashMap<>();
+				List<CompletableFuture<Void>> futures = nombreProductoPorId.keySet().stream()
+						.map(productoId -> CompletableFuture.runAsync(() -> {
+							ApiResult<List<Valoracion>> valoracionesResult = ApiClient
+									.obtenerValoracionesPorProducto(productoId);
+							List<Valoracion> valoraciones = valoracionesResult.isOk()
+									&& valoracionesResult.getData() != null ? valoracionesResult.getData() : List.of();
+							if (!valoracionesResult.isOk()) {
+								log.warning("No se pudieron cargar valoraciones del producto " + productoId + ": "
+										+ valoracionesResult.getTechnicalMessage());
+							}
+							valoracionesPorProducto.put(productoId, valoraciones);
+						}, AsyncExecutor.io())).toList();
+
+				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
 				return nombreProductoPorId.entrySet().stream().flatMap(entry -> {
-					ApiResult<List<Valoracion>> valoracionesResult = ApiClient
-							.obtenerValoracionesPorProducto(entry.getKey());
-					List<Valoracion> valoraciones = valoracionesResult.isOk() && valoracionesResult.getData() != null
-							? valoracionesResult.getData()
-							: List.of();
-					if (!valoracionesResult.isOk()) {
-						log.warning("No se pudieron cargar valoraciones del producto " + entry.getKey() + ": "
-								+ valoracionesResult.getTechnicalMessage());
-					}
+					List<Valoracion> valoraciones = valoracionesPorProducto.getOrDefault(entry.getKey(), List.of());
 					return valoraciones.stream().filter(Objects::nonNull)
 							.map(valoracion -> new ValoracionConProducto(entry.getValue(), valoracion));
-				}).sorted(Comparator.comparing((ValoracionConProducto v) -> v.valoracion().getIdValoracion()).reversed()).limit(4)
-						.toList();
+				}).sorted(Comparator.comparing((ValoracionConProducto v) -> v.valoracion().getIdValoracion()).reversed())
+						.limit(4).toList();
 			}
 		};
 
@@ -156,9 +166,7 @@ public class Perfil extends BorderPane {
 			});
 		});
 
-		Thread hiloCarga = new Thread(cargaValoracionesTask);
-		hiloCarga.setDaemon(true);
-		hiloCarga.start();
+		AsyncExecutor.io().submit(cargaValoracionesTask);
 
 		VBox columna = new VBox(12, titulo, listaValoraciones);
 		columna.setPadding(new Insets(16));

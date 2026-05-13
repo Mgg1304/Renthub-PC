@@ -1,18 +1,14 @@
 package Interfaz;
 
-import Controller.ApiClient;
-import Controller.ApiResult;
 import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.Usuario;
-import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 public class ReservaCard extends VBox {
@@ -49,42 +45,7 @@ public class ReservaCard extends VBox {
             log.info("Cargando imagen para producto ID: " + productoId);
         }
 
-        if (productoId != null) {
-            new Thread(() -> {
-
-                ApiResult<List<String>> urlsResult = ApiClient.obtenerUrlsImagenesPorProducto(productoId);
-                List<String> urls = urlsResult.isOk() && urlsResult.getData() != null ? urlsResult.getData() : List.of();
-                if (!urlsResult.isOk()) {
-                    log.warning("No se pudieron obtener imagenes del producto " + productoId + ": "
-                            + urlsResult.getTechnicalMessage());
-                }
-
-                if (urls != null && !urls.isEmpty()) {
-
-                    String primeraUrl = urls.get(0);
-
-                    Platform.runLater(() -> {
-
-                        try {
-
-                            Image img = new Image(primeraUrl, true);
-
-                            img.exceptionProperty().addListener((obs, old, ex) -> {
-                                if (ex != null) {
-                                    log.severe("Error cargando imagen: " + ex.getMessage());
-                                }
-                            });
-
-                            imagen.setImage(img);
-
-                        } catch (Exception e) {
-                            log.severe("Error cargando imagen: " + e.getMessage());
-                        }
-                    });
-                }
-
-            }).start();
-        }
+        ImageLoader.loadProductImage(productoId, imagen::setImage);
 
         // Nombre producto
         Label nombreProducto = new Label(producto != null && producto.getNombre() != null

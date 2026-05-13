@@ -57,7 +57,7 @@ public class Reservas extends BorderPane {
 
 		log.info("Iniciando carga de reservas para el administrador con ID: " + SesionAdmin.getIdActual());
 		
-		new Thread(() -> {
+		AsyncExecutor.io().submit(() -> {
 			ApiResult<List<Reserva>> resultado = ApiClient.obtenerReservasPorAdmin(SesionAdmin.getIdActual());
 			List<Reserva> reservas = resultado.isOk() && resultado.getData() != null ? resultado.getData() : List.of();
 			if (!resultado.isOk()) {
@@ -70,6 +70,6 @@ public class Reservas extends BorderPane {
 		        lblMensaje.setText(resultado.isOk() ? "" : "No se pudieron cargar todas las reservas.");
 		        log.info("Reservas cargadas en la vista para el administrador con ID: " + SesionAdmin.getIdActual());
 		    });
-		}).start();
+		});
 	}
 }

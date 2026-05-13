@@ -73,7 +73,7 @@ public class Inventario extends BorderPane {
 
 		log.info("Iniciando carga de productos para el administrador con ID: " + SesionAdmin.getIdActual());
 
-		new Thread(() -> {
+		AsyncExecutor.io().submit(() -> {
 
 		    ApiResult<java.util.List<Producto>> productosResult = ApiClient.obtenerProductosPorAdmin(SesionAdmin.getIdActual());
 		    ApiResult<java.util.List<Reserva>> reservasResult = ApiClient.obtenerReservasPorAdmin(SesionAdmin.getIdActual());
@@ -102,7 +102,7 @@ public class Inventario extends BorderPane {
 		        log.info("Productos y reservas en curso cargadas en la vista para el administrador con ID: " + SesionAdmin.getIdActual());
 		    });
 
-		}).start();
+		});
 		
 	}
 }

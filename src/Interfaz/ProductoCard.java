@@ -1,16 +1,12 @@
 package Interfaz;
 
-import Controller.ApiClient;
-import Controller.ApiResult;
 import Modelo.Producto;
-import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 public class ProductoCard extends VBox {
@@ -42,49 +38,7 @@ public class ProductoCard extends VBox {
 		Image carga = new Image("file:src/resources/img/carga.png");
 		imagen.setImage(carga);
 
-		new Thread(() -> {
-
-			log.info("Obteniendo URLs de imágenes para producto ID: " + (producto.getId()));
-
-			ApiResult<List<String>> urlsResult = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
-			List<String> urls = urlsResult.isOk() && urlsResult.getData() != null ? urlsResult.getData() : List.of();
-			if (!urlsResult.isOk()) {
-				log.warning("No se pudieron obtener imagenes del producto " + producto.getId() + ": "
-						+ urlsResult.getTechnicalMessage());
-			}
-
-			if (!urls.isEmpty()) {
-
-				String primeraUrl = urls.get(0);
-				
-//				String Url = urls.get(0);
-//				String primeraUrl = Url.replace("/upload/", "/upload/f_jpg/");
-
-				Platform.runLater(() -> {
-					try {
-						log.info("Cargando imagen producto ID: " + producto.getId());
-						log.info("URL: " + primeraUrl);
-
-						Image img = new Image(primeraUrl, true);
-
-						// DEBUG errores reales
-						img.exceptionProperty().addListener((obs, old, ex) -> {
-							if (ex != null) {
-								log.severe("Error cargando imagen: " + ex.getMessage());
-							}
-						});
-
-						imagen.setImage(img);
-
-					} catch (Exception e) {
-						log.severe("Error inesperado cargando imagen: " + e.getMessage());
-					}
-				});
-			} else {
-				log.warning("Producto sin imágenes: " + producto.getId());
-			}
-
-		}).start();
+		ImageLoader.loadProductImage(producto.getId(), imagen::setImage);
 
 		// Rating
 		Label rating = new Label(
