@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Reserva;
 import Modelo.SesionAdmin;
 import Modelo.Valoracion;
@@ -101,9 +102,12 @@ public class Perfil extends BorderPane {
 			@Override
 			protected List<ValoracionConProducto> call() {
 				Long adminId = SesionAdmin.getIdActual();
-				List<Reserva> reservas = adminId != null ? ApiClient.obtenerReservasPorAdmin(adminId) : List.of();
-				if (reservas == null) {
-					reservas = List.of();
+				ApiResult<List<Reserva>> reservasResult = adminId != null ? ApiClient.obtenerReservasPorAdmin(adminId)
+						: ApiResult.success(List.of());
+				List<Reserva> reservas = reservasResult.isOk() && reservasResult.getData() != null ? reservasResult.getData()
+						: List.of();
+				if (!reservasResult.isOk()) {
+					log.warning("No se pudieron cargar reservas del perfil: " + reservasResult.getTechnicalMessage());
 				}
 
 				Map<Integer, String> nombreProductoPorId = reservas.stream().filter(Objects::nonNull)
@@ -113,9 +117,14 @@ public class Perfil extends BorderPane {
 								(nombreA, nombreB) -> nombreA));
 
 				return nombreProductoPorId.entrySet().stream().flatMap(entry -> {
-					List<Valoracion> valoraciones = ApiClient.obtenerValoracionesPorProducto(entry.getKey());
-					if (valoraciones == null) {
-						valoraciones = List.of();
+					ApiResult<List<Valoracion>> valoracionesResult = ApiClient
+							.obtenerValoracionesPorProducto(entry.getKey());
+					List<Valoracion> valoraciones = valoracionesResult.isOk() && valoracionesResult.getData() != null
+							? valoracionesResult.getData()
+							: List.of();
+					if (!valoracionesResult.isOk()) {
+						log.warning("No se pudieron cargar valoraciones del producto " + entry.getKey() + ": "
+								+ valoracionesResult.getTechnicalMessage());
 					}
 					return valoraciones.stream().filter(Objects::nonNull)
 							.map(valoracion -> new ValoracionConProducto(entry.getValue(), valoracion));

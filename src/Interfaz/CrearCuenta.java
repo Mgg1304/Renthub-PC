@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -88,15 +89,16 @@ public class CrearCuenta extends BorderPane {
 		String nombre = txtNombre.getText();
 		String password = txtContrasenya.getText();
 
-		boolean creado = ApiClient.registerAdmin(usuario, nombre, password);
+		ApiResult<Void> resultado = ApiClient.registerAdmin(usuario, nombre, password);
 
-		if (creado) {
+		if (resultado.isOk()) {
 			lblMensaje.setText("Cuenta creada correctamente");
 			PauseTransition pausa = new PauseTransition(Duration.seconds(2));
 			pausa.setOnFinished(evento -> SceneManager.mostrarInicioSesion());
 			pausa.play();
 		} else {
-			lblMensaje.setText("Error al crear la cuenta");
+			lblMensaje.setText(
+					resultado.getUserMessage() != null ? resultado.getUserMessage() : "Error al crear la cuenta");
 		}
 
 	}

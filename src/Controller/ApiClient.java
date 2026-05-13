@@ -5,15 +5,20 @@ import java.io.File;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Type;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import Modelo.LoginResponse;
@@ -25,168 +30,97 @@ import Modelo.Valoracion;
 public class ApiClient {
 
 	private static final Logger log = Logger.getLogger(ApiClient.class.getName());
-
 	private static final String BASE_URL = "https://romantic-insight-production.up.railway.app/renthub";
+	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
+	private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
-	private static final HttpClient client = HttpClient.newHttpClient();
-
+	private static final HttpClient client = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build();
 	private static final Gson gson = new Gson();
 
-	// ---------------- REGISTRO ADMIN ----------------
-	public static boolean registerAdmin(String usuario, String nombre, String password) {
-
-		// Crear JSON con Gson
+	public static ApiResult<Void> registerAdmin(String usuario, String nombre, String password) {
 		String json = gson.toJson(new RegistroRequest(usuario, nombre, password));
-
-		log.info("json registro enviado: " + json);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/register"))
-					.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json)).build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			log.info("Respuesta del servidor: " + response.statusCode() + " - " + response.body());
-
-			return response.statusCode() == 200;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/register"))
+				.timeout(REQUEST_TIMEOUT).header("Content-Type", "application/json")
+				.POST(HttpRequest.BodyPublishers.ofString(json)).build();
+		ApiResult<String> http = sendRequest(request, "POST /admin/register");
+		if (!http.isOk()) {
+			return propagate(http);
 		}
+		return fromStatusWithoutBody(http.getStatusCode(), "Cuenta creada correctamente.",
+				"No se pudo crear la cuenta.");
 	}
 
-	// ---------------- LOGIN ADMIN ----------------
-	public static LoginResponse loginAdmin(String usuario, String password) {
-
+	public static ApiResult<LoginResponse> loginAdmin(String usuario, String password) {
 		String json = gson.toJson(new LoginRequest(usuario, password));
-
-		log.info("json login enviado: " + json);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/login"))
-					.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json)).build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			log.info("Respuesta del servidor: " + response.statusCode() + " - " + response.body());
-
-			if (response.statusCode() == 200) {
-				return gson.fromJson(response.body(), LoginResponse.class);
-			}
-
-			return null;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/login")).timeout(REQUEST_TIMEOUT)
+				.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json)).build();
+		ApiResult<String> http = sendRequest(request, "POST /admin/login");
+		if (!http.isOk()) {
+			return propagate(http);
 		}
+		if (http.getStatusCode() == 200) {
+			return parseJson(http.getData(), LoginResponse.class, "No se pudo interpretar la respuesta del login.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "Credenciales incorrectas.", "Login no autorizado.");
 	}
 
-	// ---------------- CAMBIAR CONTRASEÑA ----------------
-	public static boolean changePasswordAdmin(String usuario, String oldPassword, String newPassword) {
-
+	public static ApiResult<Void> changePasswordAdmin(String usuario, String oldPassword, String newPassword) {
 		String json = gson.toJson(new ChangePasswordRequest(usuario, oldPassword, newPassword));
-
-		log.info("json cambiar contraseña enviado: " + json);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/change-password"))
-					.header("Content-Type", "application/json").PUT(HttpRequest.BodyPublishers.ofString(json)).build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			log.info("Respuesta del servidor: " + response.statusCode() + " - " + response.body());
-
-			return response.statusCode() == 200;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/admin/change-password"))
+				.timeout(REQUEST_TIMEOUT).header("Content-Type", "application/json")
+				.PUT(HttpRequest.BodyPublishers.ofString(json)).build();
+		ApiResult<String> http = sendRequest(request, "PUT /admin/change-password");
+		if (!http.isOk()) {
+			return propagate(http);
 		}
+		return fromStatusWithoutBody(http.getStatusCode(), "Contraseña actualizada correctamente.",
+				"No se pudo cambiar la contraseña.");
 	}
 
-	// ---------------- OBTENER PRODUCTOS ----------------
-	public static List<Producto> obtenerProductosPorAdmin(Long adminId) {
-
-		log.info("Solicitando productos del admin: " + adminId);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/productos/admin/" + adminId))
-					.GET().build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			if (response.statusCode() == 200) {
-
-				log.info("JSON recibido: " + response.body());
-
-				Type listType = new TypeToken<List<Producto>>() {
-				}.getType();
-
-				List<Producto> productos = gson.fromJson(response.body(), listType);
-
-				log.info("Productos parseados: " + productos.size());
-
-				return productos;
-			}
-
-			return List.of();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return List.of();
+	public static ApiResult<List<Producto>> obtenerProductosPorAdmin(Long adminId) {
+		if (adminId == null) {
+			return ApiResult.error(ApiErrorType.VALIDATION, null, "Sesion no valida.",
+					"adminId nulo al solicitar productos", null);
 		}
-	}
-	
-	
-	public static Producto obtenerProducto(long productoId) {
-
-		log.info("Solicitando producto: " + productoId);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/productos/" + productoId))
-					.GET().build();
-			
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-			
-			if(response.statusCode() == 200) {
-				
-				log.info("JSON recibido: " + response.body());
-
-				Producto producto = gson.fromJson(response.body(), Producto.class);
-
-				log.info("Producto recibido: " + producto.toString());
-
-				return producto;
-				
-			} else {
-				log.warning("Error al obtener producto. Código: " + response.statusCode() + " - " + response.body());
-				
-			}
-
-			return null;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/productos/admin/" + adminId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /productos/admin/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
 		}
+		if (http.getStatusCode() == 200) {
+			Type listType = new TypeToken<List<Producto>>() {
+			}.getType();
+			return parseJson(http.getData(), listType, "No se pudieron interpretar los productos.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudieron cargar los productos.",
+				"Fallo al obtener productos por admin.");
 	}
 
-	// ---------------- CREAR PRODUCTO ----------------
-	public static boolean crearProducto(String nombre, String descripcion, String categoria, double precioDia,
+	public static ApiResult<Producto> obtenerProducto(long productoId) {
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/productos/" + productoId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /productos/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		if (http.getStatusCode() == 200) {
+			return parseJson(http.getData(), Producto.class, "No se pudo interpretar el producto.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudo cargar el producto.", "Producto no disponible.");
+	}
+
+	public static ApiResult<Void> crearProducto(String nombre, String descripcion, String categoria, double precioDia,
 			int stock, long adminId, List<File> archivos) {
+		if (archivos == null || archivos.isEmpty()) {
+			return ApiResult.error(ApiErrorType.VALIDATION, null, "Debes adjuntar al menos un archivo.",
+					"Lista de archivos vacia en crearProducto", null);
+		}
 
 		String boundary = "===" + System.currentTimeMillis() + "===";
-		String LINE_FEED = "\r\n";
+		String lineFeed = "\r\n";
 
 		try {
-
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
 
@@ -198,215 +132,194 @@ public class ApiClient {
 			escribirCampo(writer, boundary, "adminId", String.valueOf(adminId));
 
 			for (File archivo : archivos) {
-
-				writer.append("--").append(boundary).append(LINE_FEED);
+				writer.append("--").append(boundary).append(lineFeed);
 				writer.append("Content-Disposition: form-data; name=\"files\"; filename=\"").append(archivo.getName())
-						.append("\"").append(LINE_FEED);
-
+						.append("\"").append(lineFeed);
 				String contentType = Files.probeContentType(archivo.toPath());
 				if (contentType == null) {
 					contentType = "application/octet-stream";
 				}
-
-				writer.append("Content-Type: ").append(contentType).append(LINE_FEED);
-				writer.append(LINE_FEED);
+				writer.append("Content-Type: ").append(contentType).append(lineFeed);
+				writer.append(lineFeed);
 				writer.flush();
-
 				Files.copy(archivo.toPath(), outputStream);
-				outputStream.write(LINE_FEED.getBytes());
-
+				outputStream.write(lineFeed.getBytes());
 				writer.flush();
 			}
 
-			writer.append("--").append(boundary).append("--").append(LINE_FEED);
+			writer.append("--").append(boundary).append("--").append(lineFeed);
 			writer.close();
 
-			byte[] body = outputStream.toByteArray();
-
 			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/productos/crear"))
-					.header("Content-Type", "multipart/form-data; boundary=" + boundary)
-					.POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			log.info("Respuesta crear producto: " + response.statusCode() + " - " + response.body());
-
-			return response.statusCode() == 200;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-
-	// ---------------- OBTENER URLS DE IMÁGENES ----------------
-	public static List<String> obtenerUrlsImagenesPorProducto(long i) {
-
-		log.info("Solicitando imágenes del producto: " + i);
-
-		try {
-
-			log.info("URL llamada: " + BASE_URL + "/archivos/producto/" + i);
-			
-			HttpRequest request = HttpRequest.newBuilder()
-					.uri(URI.create(BASE_URL + "/archivos/producto/" + i)).GET().build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-			
-			log.info("JSON recibido: " + response.body());
-
-			if (response.statusCode() == 200) {
-
-				log.info("JSON imágenes: " + response.body());
-
-				Type listType = new TypeToken<List<String>>() {
-				}.getType();
-				return gson.fromJson(response.body(), listType);
+					.timeout(REQUEST_TIMEOUT).header("Content-Type", "multipart/form-data; boundary=" + boundary)
+					.POST(HttpRequest.BodyPublishers.ofByteArray(outputStream.toByteArray())).build();
+			ApiResult<String> http = sendRequest(request, "POST /productos/crear");
+			if (!http.isOk()) {
+				return propagate(http);
 			}
-
-			return List.of();
-
+			return fromStatusWithoutBody(http.getStatusCode(), "Producto creado correctamente.",
+					"No se pudo publicar el producto.");
 		} catch (Exception e) {
-			e.printStackTrace();
-			return List.of();
+			log.log(Level.WARNING, "error_type=UNKNOWN endpoint=POST /productos/crear message=Error preparando multipart",
+					e);
+			return ApiResult.error(ApiErrorType.UNKNOWN, null, "No se pudo preparar la subida del producto.",
+					e.getMessage(), e);
 		}
 	}
 
-	
-	// ---------------- OBTENER USUARIO ----------------
-	
-	public static Usuario obtenerUsuario(long usuarioId) {
+	public static ApiResult<List<String>> obtenerUrlsImagenesPorProducto(long productoId) {
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/archivos/producto/" + productoId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /archivos/producto/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		if (http.getStatusCode() == 200) {
+			Type listType = new TypeToken<List<String>>() {
+			}.getType();
+			return parseJson(http.getData(), listType, "No se pudieron interpretar las imagenes.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudieron cargar las imagenes del producto.",
+				"No se pudieron obtener URLs de imagenes");
+	}
 
-		log.info("Solicitando usuario: " + usuarioId);
+	public static ApiResult<Usuario> obtenerUsuario(long usuarioId) {
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/usuarios/" + usuarioId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /usuarios/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		if (http.getStatusCode() == 200) {
+			return parseJson(http.getData(), Usuario.class, "No se pudo interpretar el usuario.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudo cargar el usuario.", "Usuario no disponible.");
+	}
 
+	public static ApiResult<List<Reserva>> obtenerReservasPorAdmin(Long adminId) {
+		if (adminId == null) {
+			return ApiResult.error(ApiErrorType.VALIDATION, null, "Sesion no valida.",
+					"adminId nulo al solicitar reservas", null);
+		}
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/reservas/admin/" + adminId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /reservas/admin/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		if (http.getStatusCode() == 200) {
+			Type listType = new TypeToken<List<Reserva>>() {
+			}.getType();
+			return parseJson(http.getData(), listType, "No se pudieron interpretar las reservas.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudieron cargar las reservas.",
+				"Fallo al obtener reservas por admin.");
+	}
+
+	public static ApiResult<List<Valoracion>> obtenerValoracionesPorProducto(int productoId) {
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/valoraciones/producto/" + productoId))
+				.timeout(REQUEST_TIMEOUT).GET().build();
+		ApiResult<String> http = sendRequest(request, "GET /valoraciones/producto/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		if (http.getStatusCode() == 200) {
+			Type listType = new TypeToken<List<Valoracion>>() {
+			}.getType();
+			return parseJson(http.getData(), listType, "No se pudieron interpretar las valoraciones.");
+		}
+		return mapHttpStatus(http.getStatusCode(), "No se pudieron cargar las valoraciones.",
+				"Fallo al obtener valoraciones por producto.");
+	}
+
+	public static ApiResult<Void> confirmarReserva(long id) {
+		HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/reservas/confirmar/" + id))
+				.timeout(REQUEST_TIMEOUT).PUT(HttpRequest.BodyPublishers.noBody()).build();
+		ApiResult<String> http = sendRequest(request, "PUT /reservas/confirmar/{id}");
+		if (!http.isOk()) {
+			return propagate(http);
+		}
+		return fromStatusWithoutBody(http.getStatusCode(), "Reserva confirmada correctamente.",
+				"No se pudo confirmar la reserva.");
+	}
+
+	private static ApiResult<String> sendRequest(HttpRequest request, String endpoint) {
 		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/usuarios/" + usuarioId))
-					.GET().build();
-			
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-			
-			if(response.statusCode() == 200) {
-				
-				log.info("JSON recibido: " + response.body());
+			log.info("event=api_response endpoint=" + endpoint + " status=" + response.statusCode());
+			return ApiResult.success(response.body() == null ? "" : response.body(), response.statusCode());
+		} catch (HttpTimeoutException e) {
+			log.log(Level.WARNING,
+					"error_type=TIMEOUT endpoint=" + endpoint + " message=La peticion supero el tiempo maximo", e);
+			return ApiResult.error(ApiErrorType.TIMEOUT, null, "La operación tardó demasiado. Inténtalo de nuevo.",
+					e.getMessage(), e);
+		} catch (ConnectException e) {
+			log.log(Level.WARNING, "error_type=NETWORK endpoint=" + endpoint + " message=No se pudo conectar", e);
+			return ApiResult.error(ApiErrorType.NETWORK, null,
+					"No se pudo conectar con el servidor. Revisa tu conexión.", e.getMessage(), e);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			log.log(Level.WARNING, "error_type=UNKNOWN endpoint=" + endpoint + " message=Hilo interrumpido", e);
+			return ApiResult.error(ApiErrorType.UNKNOWN, null, "La operación fue interrumpida.", e.getMessage(), e);
+		} catch (Exception e) {
+			log.log(Level.WARNING, "error_type=NETWORK endpoint=" + endpoint + " message=Fallo de red", e);
+			return ApiResult.error(ApiErrorType.NETWORK, null,
+					"No se pudo conectar con el servidor. Revisa tu conexión.", e.getMessage(), e);
+		}
+	}
 
-				Usuario usuario = gson.fromJson(response.body(), Usuario.class);
+	private static <T> ApiResult<T> parseJson(String body, Class<T> clazz, String userMessage) {
+		try {
+			return ApiResult.success(gson.fromJson(body, clazz));
+		} catch (JsonSyntaxException e) {
+			log.log(Level.WARNING, "error_type=PARSE message=JSON invalido", e);
+			return ApiResult.error(ApiErrorType.PARSE, null, userMessage, e.getMessage(), e);
+		}
+	}
 
-				log.info("Producto recibido: " + usuario.toString());
+	private static <T> ApiResult<T> parseJson(String body, Type type, String userMessage) {
+		try {
+			return ApiResult.success(gson.fromJson(body, type));
+		} catch (JsonSyntaxException e) {
+			log.log(Level.WARNING, "error_type=PARSE message=JSON invalido", e);
+			return ApiResult.error(ApiErrorType.PARSE, null, userMessage, e.getMessage(), e);
+		}
+	}
 
-				return usuario;
-				
-			} else {
-				log.warning("Error al obtener producto. Código: " + response.statusCode() + " - " + response.body());
-				
+	private static <T> ApiResult<T> mapHttpStatus(int statusCode, String userMessage, String technicalMessage) {
+		if (statusCode >= 400 && statusCode <= 499) {
+			String msg = statusCode == 401 || statusCode == 403 ? "Credenciales inválidas o sin permisos." : userMessage;
+			if (statusCode == 404) {
+				msg = "Recurso no encontrado.";
 			}
-
-			return null;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			return ApiResult.error(ApiErrorType.HTTP_4XX, statusCode, msg, technicalMessage, null);
 		}
-	}
-	
-	// ---------------- OBTENER RESERVAS POR ADMIN ----------------
-	
-	public static List<Reserva> obtenerReservasPorAdmin(Long adminId) {
-
-		log.info("Solicitando reservas del admin: " + adminId);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/reservas/admin/" + adminId))
-					.GET().build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			if (response.statusCode() == 200) {
-
-				log.info("JSON recibido: " + response.body());
-
-				Type listType = new TypeToken<List<Reserva>>() {
-				}.getType();
-
-				List<Reserva> reservas = gson.fromJson(response.body(), listType);
-
-				log.info("Reservas parseadas: " + reservas.size());
-
-				return reservas;
-			}
-
-			return List.of();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return List.of();
+		if (statusCode >= 500) {
+			return ApiResult.error(ApiErrorType.HTTP_5XX, statusCode,
+					"Error interno del servidor. Inténtalo más tarde.", technicalMessage, null);
 		}
+		return ApiResult.error(ApiErrorType.UNKNOWN, statusCode, "Respuesta inesperada del servidor.", technicalMessage,
+				null);
 	}
 
-	// ---------------- OBTENER VALORACIONES POR PRODUCTO ----------------
-
-	public static List<Valoracion> obtenerValoracionesPorProducto(int productoId) {
-
-		log.info("Solicitando valoraciones del producto: " + productoId);
-
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/valoraciones/producto/" + productoId))
-					.GET().build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			if (response.statusCode() == 200) {
-
-				log.info("JSON valoraciones recibido: " + response.body());
-
-				Type listType = new TypeToken<List<Valoracion>>() {
-				}.getType();
-
-				List<Valoracion> valoraciones = gson.fromJson(response.body(), listType);
-
-				return valoraciones != null ? valoraciones : List.of();
-			}
-
-			log.warning("No se pudieron obtener valoraciones del producto " + productoId + ". Codigo: "
-					+ response.statusCode());
-			return List.of();
-
-		} catch (Exception e) {
-			log.warning("Error al obtener valoraciones del producto " + productoId + ": " + e.getMessage());
-			return List.of();
+	private static ApiResult<Void> fromStatusWithoutBody(int statusCode, String successMessage, String failMessage) {
+		if (statusCode == 200 || statusCode == 201 || statusCode == 204) {
+			return ApiResult.success(null);
 		}
+		return mapHttpStatus(statusCode, failMessage, failMessage + " status=" + statusCode);
 	}
-	
-	// ---------------- CONFIRMAR RESERVA ----------------
-	public static void confirmarReserva(long id) {
-		
-		log.info("Confirmando reserva: " + id);
 
-		try {
-
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(BASE_URL + "/reservas/confirmar/" + id))
-					.PUT(HttpRequest.BodyPublishers.noBody()).build();
-
-			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-			log.info("Respuesta confirmar reserva: " + response.statusCode() + " - " + response.body());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	private static <T> ApiResult<T> propagate(ApiResult<?> source) {
+		return ApiResult.error(source.getErrorType(), source.getStatusCode(), source.getUserMessage(),
+				source.getTechnicalMessage(), source.getException());
 	}
-	
-	// ---------------- CLASES AUXILIARES ----------------
 
 	private static class RegistroRequest {
 		String usuario;
 		String nombre;
 		String password;
 
-		public RegistroRequest(String usuario, String nombre, String password) {
+		RegistroRequest(String usuario, String nombre, String password) {
 			this.usuario = usuario;
 			this.nombre = nombre;
 			this.password = password;
@@ -417,7 +330,7 @@ public class ApiClient {
 		String usuario;
 		String password;
 
-		public LoginRequest(String usuario, String password) {
+		LoginRequest(String usuario, String password) {
 			this.usuario = usuario;
 			this.password = password;
 		}
@@ -428,7 +341,7 @@ public class ApiClient {
 		String oldPassword;
 		String newPassword;
 
-		public ChangePasswordRequest(String usuario, String oldPassword, String newPassword) {
+		ChangePasswordRequest(String usuario, String oldPassword, String newPassword) {
 			this.usuario = usuario;
 			this.oldPassword = oldPassword;
 			this.newPassword = newPassword;
@@ -436,14 +349,11 @@ public class ApiClient {
 	}
 
 	private static void escribirCampo(PrintWriter writer, String boundary, String nombre, String valor) {
-
-		String LINE_FEED = "\r\n";
-
-		writer.append("--").append(boundary).append(LINE_FEED);
-		writer.append("Content-Disposition: form-data; name=\"").append(nombre).append("\"").append(LINE_FEED);
-		writer.append(LINE_FEED);
-		writer.append(valor).append(LINE_FEED);
+		String lineFeed = "\r\n";
+		writer.append("--").append(boundary).append(lineFeed);
+		writer.append("Content-Disposition: form-data; name=\"").append(nombre).append("\"").append(lineFeed);
+		writer.append(lineFeed);
+		writer.append(valor == null ? "" : valor).append(lineFeed);
 		writer.flush();
 	}
-
 }

@@ -3,6 +3,7 @@ package Interfaz;
 import java.util.logging.Logger;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Reserva;
 import javafx.scene.control.Button;
 
@@ -19,11 +20,14 @@ public class DetalleReservaPendiente extends DetalleReserva {
 			    "-fx-text-fill: white;"
 			);
 		btnConfirmar.setOnAction(e -> {
-			// Lógica para confirmar la reserva
 			log.info("Confirmando reserva con ID: " + reserva.getId());
-			ApiClient.confirmarReserva((long)reserva.getId());
-			log.info("Reserva confirmada con ID: " + reserva.getId());
-			SceneManager.mostrarReservas();
+			ApiResult<Void> resultado = ApiClient.confirmarReserva((long) reserva.getId());
+			if (resultado.isOk()) {
+				log.info("Reserva confirmada con ID: " + reserva.getId());
+				SceneManager.mostrarReservas();
+			} else {
+				log.warning("No se pudo confirmar la reserva " + reserva.getId() + ": " + resultado.getTechnicalMessage());
+			}
 		});
 		
 		botonesBox.getChildren().add(btnConfirmar);

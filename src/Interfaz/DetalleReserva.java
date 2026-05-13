@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Producto;
 import Modelo.Reserva;
 
@@ -44,9 +45,13 @@ public class DetalleReserva extends BorderPane {
 		if (producto == null) {
 			imagenes = List.of();
 		} else {
-			imagenes = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
-			if (imagenes == null) {
+			ApiResult<List<String>> imagenesResult = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+			if (imagenesResult.isOk() && imagenesResult.getData() != null) {
+				imagenes = imagenesResult.getData();
+			} else {
 				imagenes = List.of();
+				log.warning("No se pudieron cargar imagenes de la reserva " + reserva.getId() + ": "
+						+ imagenesResult.getTechnicalMessage());
 			}
 		}
 

@@ -1,15 +1,7 @@
 package Interfaz;
 
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-
 import Controller.ApiClient;
-import Modelo.Administrador;
+import Controller.ApiResult;
 import Modelo.LoginResponse;
 import Modelo.SesionAdmin;
 import javafx.geometry.Insets;
@@ -27,7 +19,6 @@ import javafx.scene.layout.VBox;
 
 public class InicioSesion extends BorderPane {
 
-	InputStream stream;
 	Image imagen;
 	ImageView logo;
 	Label lblUsuario, lblContrasenya, lblMensaje;
@@ -108,15 +99,19 @@ public class InicioSesion extends BorderPane {
 		String usuario = txtUsuario.getText();
 		String password = txtContrasenya.getText();
 
-		LoginResponse login = ApiClient.loginAdmin(usuario, password);
+		ApiResult<LoginResponse> loginResult = ApiClient.loginAdmin(usuario, password);
 
-		if (login != null) {
+		if (loginResult.isOk() && loginResult.getData() != null) {
+			LoginResponse login = loginResult.getData();
 
 			SesionAdmin.setIdActual(login.getId());
 			SesionAdmin.setUsuarioActual(usuario);
 			SesionAdmin.setNombreActual(login.getNombre());
 			
 			SceneManager.mostrarInterfazAdministrador();
+		} else {
+			lblMensaje.setText(loginResult.getUserMessage() != null ? loginResult.getUserMessage()
+					: "No se pudo iniciar sesión.");
 
 		}
 	}

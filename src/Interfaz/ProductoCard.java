@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Producto;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -45,7 +46,12 @@ public class ProductoCard extends VBox {
 
 			log.info("Obteniendo URLs de imágenes para producto ID: " + (producto.getId()));
 
-			List<String> urls = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+			ApiResult<List<String>> urlsResult = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+			List<String> urls = urlsResult.isOk() && urlsResult.getData() != null ? urlsResult.getData() : List.of();
+			if (!urlsResult.isOk()) {
+				log.warning("No se pudieron obtener imagenes del producto " + producto.getId() + ": "
+						+ urlsResult.getTechnicalMessage());
+			}
 
 			if (!urls.isEmpty()) {
 
@@ -72,7 +78,6 @@ public class ProductoCard extends VBox {
 
 					} catch (Exception e) {
 						log.severe("Error inesperado cargando imagen: " + e.getMessage());
-						e.printStackTrace();
 					}
 				});
 			} else {

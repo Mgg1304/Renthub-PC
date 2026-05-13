@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.Usuario;
@@ -51,7 +52,12 @@ public class ReservaCard extends VBox {
         if (productoId != null) {
             new Thread(() -> {
 
-                List<String> urls = ApiClient.obtenerUrlsImagenesPorProducto(productoId);
+                ApiResult<List<String>> urlsResult = ApiClient.obtenerUrlsImagenesPorProducto(productoId);
+                List<String> urls = urlsResult.isOk() && urlsResult.getData() != null ? urlsResult.getData() : List.of();
+                if (!urlsResult.isOk()) {
+                    log.warning("No se pudieron obtener imagenes del producto " + productoId + ": "
+                            + urlsResult.getTechnicalMessage());
+                }
 
                 if (urls != null && !urls.isEmpty()) {
 

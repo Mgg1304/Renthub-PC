@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Producto;
 
 public class DetalleArticulo extends BorderPane {
@@ -26,7 +27,14 @@ public class DetalleArticulo extends BorderPane {
 
 		log.info("Mostrando detalle del producto con ID: " + producto.getId());
 
-		imagenes = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+		ApiResult<List<String>> imagenesResult = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+		if (imagenesResult.isOk() && imagenesResult.getData() != null) {
+			imagenes = imagenesResult.getData();
+		} else {
+			imagenes = List.of();
+			log.warning("No se pudieron cargar imagenes del producto " + producto.getId() + ": "
+					+ imagenesResult.getTechnicalMessage());
+		}
 		
 		imageView = new ImageView();
 		imageView.setFitWidth(400);

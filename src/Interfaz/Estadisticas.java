@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.SesionAdmin;
@@ -71,9 +72,11 @@ public class Estadisticas extends BorderPane {
 		Task<EstadisticasData> cargaTask = new Task<>() {
 			@Override
 			protected EstadisticasData call() {
-				List<Reserva> reservas = ApiClient.obtenerReservasPorAdmin(adminId);
-				if (reservas == null) {
-					reservas = List.of();
+				ApiResult<List<Reserva>> reservasResult = ApiClient.obtenerReservasPorAdmin(adminId);
+				List<Reserva> reservas = reservasResult.isOk() && reservasResult.getData() != null ? reservasResult.getData()
+						: List.of();
+				if (!reservasResult.isOk()) {
+					log.warning("No se pudieron cargar reservas de estadisticas: " + reservasResult.getTechnicalMessage());
 				}
 
 				LocalDateTime haceUnMesConMargen = LocalDateTime.now().plusDays(1).minusMonths(1);
@@ -238,9 +241,11 @@ public class Estadisticas extends BorderPane {
 		Double valoracion = valoracionEnReserva;
 		if (valoracion == null || valoracion == 0.0) {
 			try {
-				Producto productoCompleto = ApiClient.obtenerProducto(productoId);
-				if (productoCompleto != null) {
-					valoracion = productoCompleto.getValoracionMedia();
+				ApiResult<Producto> productoResult = ApiClient.obtenerProducto(productoId);
+				if (productoResult.isOk() && productoResult.getData() != null) {
+					valoracion = productoResult.getData().getValoracionMedia();
+				} else {
+					log.warning("No se pudo obtener producto " + productoId + ": " + productoResult.getTechnicalMessage());
 				}
 			} catch (Exception e) {
 				log.warning("No se pudo obtener valoracion media del producto " + productoId);

@@ -1,11 +1,6 @@
 package Interfaz;
 
 import java.io.File;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -16,6 +11,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import Modelo.SesionAdmin;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
@@ -42,7 +38,7 @@ public class NuevoProducto extends BorderPane {
 	
 	private static final Logger log = Logger.getLogger(NuevoProducto.class.getName());
 
-	Label lblNombre, lblCategoria, lblPrecio, lblStock, lblDescripcion;
+	Label lblNombre, lblCategoria, lblPrecio, lblStock, lblDescripcion, lblMensaje;
 	TextField txtNombre, txtCategoria, txtPrecio, txtStock;
 	TextArea txtDescripcion;
 	Button btnNuevoProducto, btnAñadirFotos, btnVolverInventario;
@@ -70,6 +66,9 @@ public class NuevoProducto extends BorderPane {
 
 		lblDescripcion = new Label("Descripcion del producto");
 		lblDescripcion.setMaxWidth(300);
+
+		lblMensaje = new Label("");
+		lblMensaje.setMaxWidth(300);
 
 		// TextField
 		txtNombre = new TextField();
@@ -125,7 +124,8 @@ public class NuevoProducto extends BorderPane {
 		contenedor.setAlignment(Pos.CENTER);
 		contenedor.setPadding(new Insets(20));
 		contenedor.getChildren().addAll(lblNombre, txtNombre, lblCategoria, txtCategoria, lblPrecio, txtPrecio,
-				lblStock, txtStock, lblDescripcion, txtDescripcion, previewPane, btnAñadirFotos, btnNuevoProducto);
+				lblStock, txtStock, lblDescripcion, txtDescripcion, previewPane, lblMensaje, btnAñadirFotos,
+				btnNuevoProducto);
 
 		HBox barraSuperior = new HBox(btnVolverInventario);
 		barraSuperior.setAlignment(Pos.TOP_LEFT);
@@ -321,7 +321,7 @@ public class NuevoProducto extends BorderPane {
 
 	    try {
 	        if (archivosSeleccionados == null || archivosSeleccionados.isEmpty()) {
-	            System.out.println("Debes seleccionar al menos un archivo multimedia");
+	            lblMensaje.setText("Debes seleccionar al menos un archivo multimedia");
 	            return;
 	        }
 
@@ -339,7 +339,7 @@ public class NuevoProducto extends BorderPane {
 	                ", Stock: " + stock);
 
 	        
-	        boolean ok = ApiClient.crearProducto(
+	        ApiResult<Void> resultado = ApiClient.crearProducto(
 	                nombre,
 	                descripcion,
 	                categoria,
@@ -349,15 +349,18 @@ public class NuevoProducto extends BorderPane {
 	                archivosSeleccionados
 	        );
 
-	        if (ok) {
-	            System.out.println("Producto publicado correctamente");
+	        if (resultado.isOk()) {
+	            lblMensaje.setText("Producto publicado correctamente");
 	            SceneManager.mostrarInventario();
 	        } else {
-	            System.out.println("Error al publicar producto");
+	            lblMensaje.setText(resultado.getUserMessage() != null ? resultado.getUserMessage()
+	                    : "Error al publicar producto");
+	            log.warning("Error publicando producto: " + resultado.getTechnicalMessage());
 	        }
 
 	    } catch (Exception ex) {
-	        ex.printStackTrace();
+	        log.warning("Error preparando datos del producto: " + ex.getMessage());
+	        lblMensaje.setText("Datos inválidos para publicar el producto");
 	    }
 	}
 

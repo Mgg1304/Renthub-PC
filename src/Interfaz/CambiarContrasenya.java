@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import Controller.ApiResult;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -86,16 +87,17 @@ public class CambiarContrasenya extends BorderPane {
 		String viejaContrasenya = txtViejaContrasenya.getText();
 		String nuevaContrasenya = txtNuevaContrasenya.getText();
 
-		boolean exito = ApiClient.changePasswordAdmin(usuario, viejaContrasenya, nuevaContrasenya);
+		ApiResult<Void> resultado = ApiClient.changePasswordAdmin(usuario, viejaContrasenya, nuevaContrasenya);
 
-		if (exito) {
+		if (resultado.isOk()) {
 			lblMensaje.setText("Contraseña cambiada con éxito.");
 			PauseTransition pausa = new PauseTransition(Duration.seconds(2));
 			pausa.setOnFinished(evento -> SceneManager.mostrarInicioSesion());
 			pausa.play();
 
 		} else {
-			lblMensaje.setText("Error al cambiar la contraseña. Verifica tus datos.");
+			lblMensaje.setText(resultado.getUserMessage() != null ? resultado.getUserMessage()
+					: "Error al cambiar la contraseña. Verifica tus datos.");
 		}
 	}
 }
