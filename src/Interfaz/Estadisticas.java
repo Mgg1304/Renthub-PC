@@ -210,8 +210,13 @@ public class Estadisticas extends BorderPane {
 	}
 
 	private void aplicarColorTitulosColumnas(TableView<ReservaUltimoMesRow> tabla) {
-		Map<String, String> colorPorTitulo = Map.of("ID", "#1179ff", "Nombre de usuario", "#1179ff", "Fecha fin",
-				"#1179ff", "Producto", "#31c533", "Fecha inicio", "#31c533", "Estado", "#31c533");
+		String azulSuave = "#6f9fcf";
+		String verdeSuave = "#7dbf85";
+		Map<String, String> colorPorTitulo = new HashMap<>();
+		for (int i = 0; i < tabla.getColumns().size(); i++) {
+			TableColumn<ReservaUltimoMesRow, ?> columna = tabla.getColumns().get(i);
+			colorPorTitulo.put(columna.getText(), i % 2 == 0 ? azulSuave : verdeSuave);
+		}
 
 		Runnable aplicarEstilos = () -> {
 			for (Node header : tabla.lookupAll(".column-header")) {
@@ -223,8 +228,8 @@ public class Estadisticas extends BorderPane {
 				if (color == null) {
 					continue;
 				}
-				header.setStyle("-fx-background-color: " + color + ";");
-				etiqueta.setStyle("-fx-text-fill: white;");
+				header.setStyle("-fx-background-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 0 1 0 0;");
+				etiqueta.setStyle("-fx-text-fill: white; -fx-font-weight: 700;");
 			}
 		};
 
