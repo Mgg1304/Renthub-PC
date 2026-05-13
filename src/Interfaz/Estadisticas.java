@@ -21,9 +21,11 @@ import Controller.ApiResult;
 import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.SesionAdmin;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -82,14 +84,20 @@ public class Estadisticas extends BorderPane {
 					log.warning("No se pudieron cargar reservas de estadisticas: " + reservasResult.getTechnicalMessage());
 				}
 
-				LocalDateTime haceUnMesConMargen = LocalDateTime.now().plusDays(1).minusMonths(1);
+				LocalDateTime haceUnMesConMargen = LocalDateTime.now().minusMonths(1);
 				List<ReservaUltimoMesRow> reservasUltimoMes = reservas.stream().filter(Objects::nonNull)
-						.filter(r -> r.getEstado() != null && r.getEstado().equalsIgnoreCase("TERMINADA")).filter(r -> {
-							LocalDateTime fechaHora = parseFechaHora(r.getFechaCreacion());
+						.filter(r -> esEstadoFinalizado(r.getEstado()))
+						.filter(r -> {
+							LocalDateTime fechaHora = obtenerFechaReferenciaReserva(r);
 							return fechaHora != null && !fechaHora.isBefore(haceUnMesConMargen);
 						}).map(r -> new ReservaUltimoMesRow(r.getId(),
 								r.getProducto() != null ? r.getProducto().getNombre() : "Sin producto",
-								r.getUsuario() != null ? r.getUsuario().getUsuario() : "Sin usuario", r.getFechaInicio(),
+								r.getUsuario() != null
+										? (r.getUsuario().getNombre() != null && !r.getUsuario().getNombre().isBlank()
+												? r.getUsuario().getNombre()
+												: r.getUsuario().getUsuario())
+										: "Sin usuario",
+								r.getFechaInicio(),
 								r.getFechaFin(), r.getEstado())).toList();
 
 				Map<String, List<Reserva>> reservasPorProducto = reservas.stream().filter(Objects::nonNull)
@@ -180,7 +188,7 @@ public class Estadisticas extends BorderPane {
 		colProducto.setCellValueFactory(data -> data.getValue().productoProperty());
 		colProducto.setMaxWidth(1f * Integer.MAX_VALUE * 20);
 
-		TableColumn<ReservaUltimoMesRow, String> colUsuario = new TableColumn<>("Usuario");
+		TableColumn<ReservaUltimoMesRow, String> colUsuario = new TableColumn<>("Nombre de usuario");
 		colUsuario.setCellValueFactory(data -> data.getValue().usuarioProperty());
 		colUsuario.setMaxWidth(1f * Integer.MAX_VALUE * 18);
 
@@ -197,7 +205,31 @@ public class Estadisticas extends BorderPane {
 		colEstado.setMaxWidth(1f * Integer.MAX_VALUE * 18);
 
 		tabla.getColumns().addAll(colId, colProducto, colUsuario, colInicio, colFin, colEstado);
+		aplicarColorTitulosColumnas(tabla);
 		return tabla;
+	}
+
+	private void aplicarColorTitulosColumnas(TableView<ReservaUltimoMesRow> tabla) {
+		Map<String, String> colorPorTitulo = Map.of("ID", "#1179ff", "Nombre de usuario", "#1179ff", "Fecha fin",
+				"#1179ff", "Producto", "#31c533", "Fecha inicio", "#31c533", "Estado", "#31c533");
+
+		Runnable aplicarEstilos = () -> {
+			for (Node header : tabla.lookupAll(".column-header")) {
+				Node label = header.lookup(".label");
+				if (!(label instanceof Label etiqueta)) {
+					continue;
+				}
+				String color = colorPorTitulo.get(etiqueta.getText());
+				if (color == null) {
+					continue;
+				}
+				header.setStyle("-fx-background-color: " + color + ";");
+				etiqueta.setStyle("-fx-text-fill: white;");
+			}
+		};
+
+		tabla.skinProperty().addListener((obs, anterior, actual) -> Platform.runLater(aplicarEstilos));
+		Platform.runLater(aplicarEstilos);
 	}
 
 	private TableView<ValoracionMediaRow> crearTablaValoracionesMedias() {
@@ -249,6 +281,23 @@ public class Estadisticas extends BorderPane {
 			log.warning("No se pudo parsear la fecha: " + fecha);
 			return null;
 		}
+	}
+
+	private boolean esEstadoFinalizado(String estado) {
+		if (estado == null || estado.isBlank()) {
+			return false;
+		}
+		String estadoNormalizado = estado.trim();
+		return estadoNormalizado.equalsIgnoreCase("FINALIZADA")
+				|| estadoNormalizado.equalsIgnoreCase("TERMINADA");
+	}
+
+	private LocalDateTime obtenerFechaReferenciaReserva(Reserva reserva) {
+		LocalDateTime fechaFin = parseFechaHora(reserva.getFechaFin());
+		if (fechaFin != null) {
+			return fechaFin;
+		}
+		return parseFechaHora(reserva.getFechaCreacion());
 	}
 
 	private Double obtenerValoracionMediaProducto(int productoId, Double valoracionEnReserva,
