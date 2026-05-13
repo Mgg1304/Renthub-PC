@@ -11,6 +11,8 @@ import Controller.ApiClient;
 import Modelo.Reserva;
 import Modelo.SesionAdmin;
 import Modelo.Valoracion;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -92,29 +94,62 @@ public class Perfil extends BorderPane {
 		titulo.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
 
 		VBox listaValoraciones = new VBox(10);
+		Label lblCarga = new Label("Cargando valoraciones...");
+		listaValoraciones.getChildren().add(lblCarga);
 
-		Long adminId = SesionAdmin.getIdActual();
-		List<Reserva> reservas = adminId != null ? ApiClient.obtenerReservasPorAdmin(adminId) : List.of();
+		Task<List<ValoracionConProducto>> cargaValoracionesTask = new Task<>() {
+			@Override
+			protected List<ValoracionConProducto> call() {
+				Long adminId = SesionAdmin.getIdActual();
+				List<Reserva> reservas = adminId != null ? ApiClient.obtenerReservasPorAdmin(adminId) : List.of();
+				if (reservas == null) {
+					reservas = List.of();
+				}
 
-		Map<Integer, String> nombreProductoPorId = reservas.stream().filter(Objects::nonNull)
-				.filter(r -> r.getProducto() != null).collect(Collectors.toMap(r -> r.getProducto().getId(),
-						r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto",
-						(nombreA, nombreB) -> nombreA));
+				Map<Integer, String> nombreProductoPorId = reservas.stream().filter(Objects::nonNull)
+						.filter(r -> r.getProducto() != null)
+						.collect(Collectors.toMap(r -> r.getProducto().getId(),
+								r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto",
+								(nombreA, nombreB) -> nombreA));
 
-		List<ValoracionConProducto> ultimasValoraciones = nombreProductoPorId.entrySet().stream().flatMap(entry -> {
-			List<Valoracion> valoraciones = ApiClient.obtenerValoracionesPorProducto(entry.getKey());
-			return valoraciones.stream().map(valoracion -> new ValoracionConProducto(entry.getValue(), valoracion));
-		}).sorted(Comparator.comparing((ValoracionConProducto v) -> v.valoracion().getIdValoracion()).reversed()).limit(4)
-				.toList();
+				return nombreProductoPorId.entrySet().stream().flatMap(entry -> {
+					List<Valoracion> valoraciones = ApiClient.obtenerValoracionesPorProducto(entry.getKey());
+					if (valoraciones == null) {
+						valoraciones = List.of();
+					}
+					return valoraciones.stream().filter(Objects::nonNull)
+							.map(valoracion -> new ValoracionConProducto(entry.getValue(), valoracion));
+				}).sorted(Comparator.comparing((ValoracionConProducto v) -> v.valoracion().getIdValoracion()).reversed()).limit(4)
+						.toList();
+			}
+		};
 
-		ultimasValoraciones
-				.forEach(valoracionConProducto -> listaValoraciones
-						.getChildren().add(crearTarjetaValoracion(valoracionConProducto.nombreProducto(),
+		cargaValoracionesTask.setOnSucceeded(evento -> {
+			List<ValoracionConProducto> ultimasValoraciones = cargaValoracionesTask.getValue();
+			Platform.runLater(() -> {
+				listaValoraciones.getChildren().clear();
+				if (ultimasValoraciones == null || ultimasValoraciones.isEmpty()) {
+					listaValoraciones.getChildren().add(new Label("No hay valoraciones disponibles."));
+					return;
+				}
+
+				ultimasValoraciones.forEach(valoracionConProducto -> listaValoraciones.getChildren()
+						.add(crearTarjetaValoracion(valoracionConProducto.nombreProducto(),
 								valoracionConProducto.valoracion())));
+			});
+		});
 
-		if (listaValoraciones.getChildren().isEmpty()) {
-			listaValoraciones.getChildren().add(new Label("No hay valoraciones disponibles."));
-		}
+		cargaValoracionesTask.setOnFailed(evento -> {
+			log.warning("No se pudieron cargar las valoraciones del perfil.");
+			Platform.runLater(() -> {
+				listaValoraciones.getChildren().clear();
+				listaValoraciones.getChildren().add(new Label("No se pudieron cargar las valoraciones."));
+			});
+		});
+
+		Thread hiloCarga = new Thread(cargaValoracionesTask);
+		hiloCarga.setDaemon(true);
+		hiloCarga.start();
 
 		VBox columna = new VBox(12, titulo, listaValoraciones);
 		columna.setPadding(new Insets(16));

@@ -3,6 +3,7 @@ package Interfaz;
 import Controller.ApiClient;
 import Modelo.Producto;
 import Modelo.Reserva;
+import Modelo.Usuario;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -40,40 +41,49 @@ public class ReservaCard extends VBox {
         Image carga = new Image("file:src/resources/img/carga.png");
         imagen.setImage(carga);
 
-        log.info("Cargando imagen para producto ID: " + reserva.getProducto().getId());
+        Producto producto = reserva != null ? reserva.getProducto() : null;
+        Integer productoId = producto != null ? producto.getId() : null;
 
-        new Thread(() -> {
+        if (productoId != null) {
+            log.info("Cargando imagen para producto ID: " + productoId);
+        }
 
-            List<String> urls = ApiClient.obtenerUrlsImagenesPorProducto(reserva.getProducto().getId());
+        if (productoId != null) {
+            new Thread(() -> {
 
-            if (!urls.isEmpty()) {
+                List<String> urls = ApiClient.obtenerUrlsImagenesPorProducto(productoId);
 
-                String primeraUrl = urls.get(0);
+                if (urls != null && !urls.isEmpty()) {
 
-                Platform.runLater(() -> {
+                    String primeraUrl = urls.get(0);
 
-                    try {
+                    Platform.runLater(() -> {
 
-                        Image img = new Image(primeraUrl, true);
+                        try {
 
-                        img.exceptionProperty().addListener((obs, old, ex) -> {
-                            if (ex != null) {
-                                log.severe("Error cargando imagen: " + ex.getMessage());
-                            }
-                        });
+                            Image img = new Image(primeraUrl, true);
 
-                        imagen.setImage(img);
+                            img.exceptionProperty().addListener((obs, old, ex) -> {
+                                if (ex != null) {
+                                    log.severe("Error cargando imagen: " + ex.getMessage());
+                                }
+                            });
 
-                    } catch (Exception e) {
-                        log.severe("Error cargando imagen: " + e.getMessage());
-                    }
-                });
-            }
+                            imagen.setImage(img);
 
-        }).start();
+                        } catch (Exception e) {
+                            log.severe("Error cargando imagen: " + e.getMessage());
+                        }
+                    });
+                }
+
+            }).start();
+        }
 
         // Nombre producto
-        Label nombreProducto = new Label(reserva.getProducto().getNombre());
+        Label nombreProducto = new Label(producto != null && producto.getNombre() != null
+                ? producto.getNombre()
+                : "Sin producto");
         nombreProducto.setWrapText(true);
         nombreProducto.setStyle("""
                 -fx-font-size: 14;
@@ -81,7 +91,9 @@ public class ReservaCard extends VBox {
                 """);
 
         // Estado reserva
-        Label estado = new Label("Estado: " + reserva.getEstado());
+        Label estado = new Label("Estado: " + (reserva != null && reserva.getEstado() != null
+                ? reserva.getEstado()
+                : "Sin estado"));
 
         estado.setStyle("""
                 -fx-background-color: #e8e8e8;
@@ -93,14 +105,19 @@ public class ReservaCard extends VBox {
         // Fechas
 
         Label fechaInicio = new Label(
-                "Inicio: " + reserva.getFechaInicio());
+                "Inicio: " + (reserva != null && reserva.getFechaInicio() != null
+                        ? reserva.getFechaInicio()
+                        : "Sin fecha"));
 
         Label fechaFin = new Label(
-                "Fin: " + reserva.getFechaFin());
+                "Fin: " + (reserva != null && reserva.getFechaFin() != null
+                        ? reserva.getFechaFin()
+                        : "Sin fecha"));
 
         // Precio
+        String precioTexto = producto != null ? producto.getPrecioPorDia() + "€/día" : "Precio no disponible";
         Label precio = new Label(
-        		reserva.getProducto().getPrecioPorDia() + "€/día");
+				precioTexto);
 
         precio.setStyle("""
                 -fx-font-weight: bold;
@@ -108,8 +125,11 @@ public class ReservaCard extends VBox {
                 """);
 
         // Usuario
+        Usuario usuarioReserva = reserva != null ? reserva.getUsuario() : null;
         Label usuario = new Label(
-                "Usuario: " + reserva.getUsuario().getNombre());
+				"Usuario: " + (usuarioReserva != null && usuarioReserva.getNombre() != null
+						? usuarioReserva.getNombre()
+						: "Sin usuario"));
 
         VBox infoBox = new VBox(
                 5,
@@ -129,7 +149,9 @@ public class ReservaCard extends VBox {
         );
 
         this.setOnMouseClicked(e -> {
-            SceneManager.mostrarDetalleReserva(reserva);
+            if (reserva != null) {
+                SceneManager.mostrarDetalleReserva(reserva);
+            }
         });
     }
 }

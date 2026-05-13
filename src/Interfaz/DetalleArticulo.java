@@ -111,7 +111,7 @@ public class DetalleArticulo extends BorderPane {
 		info.getChildren().addAll(nombre, filaPrecioValoracion, categoriaLabel, stockLabel, descripcionLabel);
 		
 		Button btnVolver = new Button("Volver");
-		btnVolver.setOnAction(e -> SceneManager.mostrarReservas());
+		btnVolver.setOnAction(e -> SceneManager.mostrarInventario());
 		btnVolver.setStyle(
 			    "-fx-background-color: #1179ff;" +
 			    "-fx-text-fill: white;"

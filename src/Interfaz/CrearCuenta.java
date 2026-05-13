@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -11,6 +12,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 public class CrearCuenta extends BorderPane {
 
@@ -90,12 +92,9 @@ public class CrearCuenta extends BorderPane {
 
 		if (creado) {
 			lblMensaje.setText("Cuenta creada correctamente");
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			SceneManager.mostrarInicioSesion();
+			PauseTransition pausa = new PauseTransition(Duration.seconds(2));
+			pausa.setOnFinished(evento -> SceneManager.mostrarInicioSesion());
+			pausa.play();
 		} else {
 			lblMensaje.setText("Error al crear la cuenta");
 		}

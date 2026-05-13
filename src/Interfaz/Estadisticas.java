@@ -18,6 +18,7 @@ import Modelo.Producto;
 import Modelo.Reserva;
 import Modelo.SesionAdmin;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -67,40 +68,81 @@ public class Estadisticas extends BorderPane {
 			return;
 		}
 
-		List<Reserva> reservas = ApiClient.obtenerReservasPorAdmin(adminId);
+		Task<EstadisticasData> cargaTask = new Task<>() {
+			@Override
+			protected EstadisticasData call() {
+				List<Reserva> reservas = ApiClient.obtenerReservasPorAdmin(adminId);
+				if (reservas == null) {
+					reservas = List.of();
+				}
 
-		LocalDateTime haceUnMesConMargen = LocalDateTime.now().plusDays(1).minusMonths(1);
-		List<ReservaUltimoMesRow> reservasUltimoMes = reservas.stream().filter(Objects::nonNull)
-				.filter(r -> r.getEstado() != null && r.getEstado().equalsIgnoreCase("TERMINADA")).filter(r -> {
-					LocalDateTime fechaHora = parseFechaHora(r.getFechaCreacion());
-					return fechaHora != null && !fechaHora.isBefore(haceUnMesConMargen);
-				})
-				.map(r -> new ReservaUltimoMesRow(r.getId(),
-						r.getProducto() != null ? r.getProducto().getNombre() : "Sin producto",
-						r.getUsuario() != null ? r.getUsuario().getUsuario() : "Sin usuario", r.getFechaInicio(),
-						r.getFechaFin(), r.getEstado()))
-				.toList();
+				LocalDateTime haceUnMesConMargen = LocalDateTime.now().plusDays(1).minusMonths(1);
+				List<ReservaUltimoMesRow> reservasUltimoMes = reservas.stream().filter(Objects::nonNull)
+						.filter(r -> r.getEstado() != null && r.getEstado().equalsIgnoreCase("TERMINADA")).filter(r -> {
+							LocalDateTime fechaHora = parseFechaHora(r.getFechaCreacion());
+							return fechaHora != null && !fechaHora.isBefore(haceUnMesConMargen);
+						}).map(r -> new ReservaUltimoMesRow(r.getId(),
+								r.getProducto() != null ? r.getProducto().getNombre() : "Sin producto",
+								r.getUsuario() != null ? r.getUsuario().getUsuario() : "Sin usuario", r.getFechaInicio(),
+								r.getFechaFin(), r.getEstado())).toList();
 
-		Map<String, List<Reserva>> reservasPorProducto = reservas.stream().filter(Objects::nonNull)
-				.filter(r -> r.getProducto() != null).collect(Collectors.groupingBy(
-						r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto"));
+				Map<String, List<Reserva>> reservasPorProducto = reservas.stream().filter(Objects::nonNull)
+						.filter(r -> r.getProducto() != null)
+						.collect(Collectors.groupingBy(
+								r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto"));
 
-		Map<Integer, Double> valoracionMediaPorProductoId = new HashMap<>();
+				Map<Integer, Double> valoracionMediaPorProductoId = new HashMap<>();
 
-		List<ValoracionMediaRow> valoracionesMedias = reservasPorProducto.entrySet().stream().map(entry -> {
-			String producto = entry.getKey();
-			long totalReservas = entry.getValue().size();
+				List<ValoracionMediaRow> valoracionesMedias = reservasPorProducto.entrySet().stream().map(entry -> {
+					String producto = entry.getKey();
+					long totalReservas = entry.getValue().size();
 
-			double media = entry.getValue().stream().map(Reserva::getProducto).filter(Objects::nonNull)
-					.map(p -> obtenerValoracionMediaProducto(p.getId(), p.getValoracionMedia(), valoracionMediaPorProductoId))
-					.filter(Objects::nonNull).mapToDouble(Double::doubleValue)
-					.average().orElse(0.0);
+					double media = entry.getValue().stream().map(Reserva::getProducto).filter(Objects::nonNull)
+							.map(p -> obtenerValoracionMediaProducto(p.getId(), p.getValoracionMedia(),
+									valoracionMediaPorProductoId))
+							.filter(Objects::nonNull).mapToDouble(Double::doubleValue).average().orElse(0.0);
 
-			return new ValoracionMediaRow(producto, totalReservas, String.format("%.2f", media));
-		}).sorted(Comparator.comparing(ValoracionMediaRow::getProducto)).toList();
+					return new ValoracionMediaRow(producto, totalReservas, String.format("%.2f", media));
+				}).sorted(Comparator.comparing(ValoracionMediaRow::getProducto)).toList();
 
-		tablaUltimoMes.setItems(FXCollections.observableArrayList(reservasUltimoMes));
-		tablaValoraciones.setItems(FXCollections.observableArrayList(valoracionesMedias));
+				return new EstadisticasData(reservasUltimoMes, valoracionesMedias);
+			}
+		};
+
+		cargaTask.setOnSucceeded(evento -> {
+			EstadisticasData data = cargaTask.getValue();
+			tablaUltimoMes.setItems(FXCollections.observableArrayList(data.reservasUltimoMes()));
+			tablaValoraciones.setItems(FXCollections.observableArrayList(data.valoracionesMedias()));
+		});
+
+		cargaTask.setOnFailed(evento -> {
+			log.warning("No se pudieron cargar las estadisticas.");
+			tablaUltimoMes.setItems(FXCollections.observableArrayList());
+			tablaValoraciones.setItems(FXCollections.observableArrayList());
+		});
+
+		Thread hiloCarga = new Thread(cargaTask);
+		hiloCarga.setDaemon(true);
+		hiloCarga.start();
+	}
+
+	private static class EstadisticasData {
+		private final List<ReservaUltimoMesRow> reservasUltimoMes;
+		private final List<ValoracionMediaRow> valoracionesMedias;
+
+		private EstadisticasData(List<ReservaUltimoMesRow> reservasUltimoMes,
+				List<ValoracionMediaRow> valoracionesMedias) {
+			this.reservasUltimoMes = reservasUltimoMes;
+			this.valoracionesMedias = valoracionesMedias;
+		}
+
+		private List<ReservaUltimoMesRow> reservasUltimoMes() {
+			return reservasUltimoMes;
+		}
+
+		private List<ValoracionMediaRow> valoracionesMedias() {
+			return valoracionesMedias;
+		}
 	}
 
 	private TableView<ReservaUltimoMesRow> crearTablaReservasUltimoMes() {

@@ -1,6 +1,7 @@
 package Interfaz;
 
 import Controller.ApiClient;
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -11,6 +12,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 public class CambiarContrasenya extends BorderPane {
 
@@ -88,12 +90,9 @@ public class CambiarContrasenya extends BorderPane {
 
 		if (exito) {
 			lblMensaje.setText("Contraseña cambiada con éxito.");
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-
-			}
-			SceneManager.mostrarInicioSesion();
+			PauseTransition pausa = new PauseTransition(Duration.seconds(2));
+			pausa.setOnFinished(evento -> SceneManager.mostrarInicioSesion());
+			pausa.play();
 
 		} else {
 			lblMensaje.setText("Error al cambiar la contraseña. Verifica tus datos.");

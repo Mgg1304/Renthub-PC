@@ -32,9 +32,23 @@ public class DetalleReserva extends BorderPane {
 
 	public DetalleReserva(Reserva reserva) {
 
+		if (reserva == null) {
+			log.warning("No se puede mostrar detalle de una reserva nula.");
+			setCenter(new Label("Reserva no disponible"));
+			return;
+		}
+
 		log.info("Mostrando detalle de la reserva con ID: " + reserva.getId());
 
-		imagenes = ApiClient.obtenerUrlsImagenesPorProducto(reserva.getProducto().getId());
+		Producto producto = reserva.getProducto();
+		if (producto == null) {
+			imagenes = List.of();
+		} else {
+			imagenes = ApiClient.obtenerUrlsImagenesPorProducto(producto.getId());
+			if (imagenes == null) {
+				imagenes = List.of();
+			}
+		}
 
 		imageView = new ImageView();
 		imageView.setFitWidth(400);
@@ -77,7 +91,8 @@ public class DetalleReserva extends BorderPane {
 		VBox info = new VBox(10);
 
 		// Nombre producto
-		Label nombre = new Label(reserva.getProducto().getNombre());
+		String nombreProducto = producto != null && producto.getNombre() != null ? producto.getNombre() : "Sin producto";
+		Label nombre = new Label(nombreProducto);
 		nombre.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
 		// Estado reserva
@@ -89,23 +104,27 @@ public class DetalleReserva extends BorderPane {
 				""");
 
 		// Precio
-		Label precioLabel = new Label(reserva.getProducto().getPrecioPorDia() + " €/día");
+		String precioTexto = producto != null ? producto.getPrecioPorDia() + " €/día" : "Precio no disponible";
+		Label precioLabel = new Label(precioTexto);
 		precioLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: green;");
 
 		// Fechas
 
 		Label fechaInicio = new Label(
-				"Inicio: " + reserva.getFechaInicio());
+				"Inicio: " + (reserva.getFechaInicio() != null ? reserva.getFechaInicio() : "Sin fecha"));
 
 		Label fechaFin = new Label(
-				"Fin: " + reserva.getFechaFin());
+				"Fin: " + (reserva.getFechaFin() != null ? reserva.getFechaFin() : "Sin fecha"));
 
 		// Categoría
-		Label categoriaLabel = new Label("Categoría: " + reserva.getProducto().getCategoria());
+		String categoria = producto != null && producto.getCategoria() != null ? producto.getCategoria() : "Sin categoria";
+		Label categoriaLabel = new Label("Categoría: " + categoria);
 		categoriaLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: gray;");
 
 		// Descripción
-		Label descripcionLabel = new Label(reserva.getProducto().getDescripcion());
+		String descripcion = producto != null && producto.getDescripcion() != null ? producto.getDescripcion()
+				: "Sin descripcion";
+		Label descripcionLabel = new Label(descripcion);
 		descripcionLabel.setWrapText(true);
 
 		// Contenedor fechas
