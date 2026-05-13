@@ -209,12 +209,12 @@ public class Estadisticas extends BorderPane {
 		return tabla;
 	}
 
-	private void aplicarColorTitulosColumnas(TableView<ReservaUltimoMesRow> tabla) {
+	private void aplicarColorTitulosColumnas(TableView<?> tabla) {
 		String azulSuave = "#6f9fcf";
 		String verdeSuave = "#7dbf85";
 		Map<String, String> colorPorTitulo = new HashMap<>();
 		for (int i = 0; i < tabla.getColumns().size(); i++) {
-			TableColumn<ReservaUltimoMesRow, ?> columna = tabla.getColumns().get(i);
+			TableColumn<?, ?> columna = tabla.getColumns().get(i);
 			colorPorTitulo.put(columna.getText(), i % 2 == 0 ? azulSuave : verdeSuave);
 		}
 
@@ -255,6 +255,7 @@ public class Estadisticas extends BorderPane {
 		colMedia.setMaxWidth(1f * Integer.MAX_VALUE * 30);
 
 		tabla.getColumns().addAll(colProducto, colTotal, colMedia);
+		aplicarColorTitulosColumnas(tabla);
 		return tabla;
 	}
 
