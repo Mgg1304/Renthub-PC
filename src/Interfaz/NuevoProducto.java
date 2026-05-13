@@ -45,7 +45,7 @@ public class NuevoProducto extends BorderPane {
 	Label lblNombre, lblCategoria, lblPrecio, lblStock, lblDescripcion;
 	TextField txtNombre, txtCategoria, txtPrecio, txtStock;
 	TextArea txtDescripcion;
-	Button btnNuevoProducto, btnAñadirFotos;
+	Button btnNuevoProducto, btnAñadirFotos, btnVolverInventario;
 	FlowPane previewPane;
 	List<File> archivosSeleccionados = new ArrayList<>();
 	VBox contenedor;
@@ -107,6 +107,13 @@ public class NuevoProducto extends BorderPane {
 			    "-fx-text-fill: white;"
 			);
 
+		btnVolverInventario = new Button("Volver a inventario");
+		btnVolverInventario.setOnAction(e -> SceneManager.mostrarInventario());
+		btnVolverInventario.setStyle(
+			    "-fx-background-color: #1179ff;" +
+			    "-fx-text-fill: white;"
+			);
+
 		// Flowpane
 		previewPane = new FlowPane();
 		previewPane.setHgap(10);
@@ -119,6 +126,11 @@ public class NuevoProducto extends BorderPane {
 		contenedor.setPadding(new Insets(20));
 		contenedor.getChildren().addAll(lblNombre, txtNombre, lblCategoria, txtCategoria, lblPrecio, txtPrecio,
 				lblStock, txtStock, lblDescripcion, txtDescripcion, previewPane, btnAñadirFotos, btnNuevoProducto);
+
+		HBox barraSuperior = new HBox(btnVolverInventario);
+		barraSuperior.setAlignment(Pos.TOP_LEFT);
+		barraSuperior.setPadding(new Insets(20, 20, 0, 20));
+		setTop(barraSuperior);
 
 		setCenter(contenedor);
 	}
