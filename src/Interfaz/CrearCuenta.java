@@ -15,6 +15,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+import java.util.Objects;
+
 public class CrearCuenta extends BorderPane {
 
 	Image imagen;
@@ -28,7 +30,7 @@ public class CrearCuenta extends BorderPane {
 	public CrearCuenta() {
 
 		// Logo
-		imagen = new Image("file:src/resources/img/Logo_RentHub.png");
+		imagen = new Image(Objects.requireNonNull(getClass().getResource("/img/Logo_RentHub.png")).toExternalForm());
 		logo = new ImageView(imagen);
 
 		logo.setFitWidth(200);

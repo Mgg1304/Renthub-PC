@@ -7,6 +7,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class ProductoCard extends VBox {
@@ -35,7 +36,7 @@ public class ProductoCard extends VBox {
 
 		log.info("Cargando imagen para producto ID: " + producto.getId());
 		
-		Image carga = new Image("file:src/resources/img/carga.png");
+		Image carga = new Image(Objects.requireNonNull(getClass().getResource("/img/carga.png")).toExternalForm());
 		imagen.setImage(carga);
 
 		ImageLoader.loadProductImage(producto.getId(), imagen::setImage);

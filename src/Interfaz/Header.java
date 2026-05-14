@@ -8,6 +8,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.Objects;
+
 public class Header extends HBox{
 	
 	Image imagen;
@@ -17,7 +19,7 @@ public class Header extends HBox{
 	VBox lm;
 	
 	public Header() {
-		imagen = new Image("file:src/resources/img/Logo_RentHub.png");
+		imagen = new Image(Objects.requireNonNull(getClass().getResource("/img/Logo_RentHub.png")).toExternalForm());
 		logo = new ImageView(imagen);
 		
 		logo.setFitHeight(100);

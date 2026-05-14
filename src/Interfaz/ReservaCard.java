@@ -9,6 +9,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class ReservaCard extends VBox {
@@ -35,7 +36,7 @@ public class ReservaCard extends VBox {
         imagen.setFitHeight(100);
         imagen.setPreserveRatio(true);
 
-        Image carga = new Image("file:src/resources/img/carga.png");
+        Image carga = new Image(Objects.requireNonNull(getClass().getResource("/img/carga.png")).toExternalForm());
         imagen.setImage(carga);
 
         Producto producto = reserva != null ? reserva.getProducto() : null;

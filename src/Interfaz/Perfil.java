@@ -67,7 +67,7 @@ public class Perfil extends BorderPane {
 
 		VBox columna = new VBox(12, titulo, lblNombre, lblUsuario);
 		columna.setPadding(new Insets(16));
-		columna.setStyle("-fx-background-color: #f7f7f7; -fx-background-radius: 8;");
+		columna.setStyle("-fx-background-color: #6f9fcf; -fx-background-radius: 8;");
 		HBox.setHgrow(columna, Priority.ALWAYS);
 		columna.setPrefWidth(260);
 		return columna;
@@ -86,7 +86,7 @@ public class Perfil extends BorderPane {
 
 		VBox columna = new VBox(12, titulo, nivel, descripcion);
 		columna.setPadding(new Insets(16));
-		columna.setStyle("-fx-background-color: #f7f7f7; -fx-background-radius: 8;");
+		columna.setStyle("-fx-background-color: #6f9fcf; -fx-background-radius: 8;");
 		HBox.setHgrow(columna, Priority.ALWAYS);
 		columna.setPrefWidth(320);
 		return columna;
@@ -170,7 +170,7 @@ public class Perfil extends BorderPane {
 
 		VBox columna = new VBox(12, titulo, listaValoraciones);
 		columna.setPadding(new Insets(16));
-		columna.setStyle("-fx-background-color: #f7f7f7; -fx-background-radius: 8;");
+		columna.setStyle("-fx-background-color: #6f9fcf; -fx-background-radius: 8;");
 		HBox.setHgrow(columna, Priority.ALWAYS);
 		columna.setPrefWidth(420);
 		return columna;
@@ -197,7 +197,7 @@ public class Perfil extends BorderPane {
 		tarjeta.setVgap(8);
 		tarjeta.add(cabecera, 0, 0);
 		tarjeta.add(texto, 0, 1);
-		tarjeta.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 6; -fx-padding: 10;");
+		tarjeta.setStyle("-fx-background-color: #7dbf85; -fx-background-radius: 6; -fx-padding: 10;");
 
 		return tarjeta;
 	}

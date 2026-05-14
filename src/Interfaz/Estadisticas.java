@@ -84,9 +84,11 @@ public class Estadisticas extends BorderPane {
 					log.warning("No se pudieron cargar reservas de estadisticas: " + reservasResult.getTechnicalMessage());
 				}
 
+				List<Reserva> reservasFinalizadas = reservas.stream().filter(Objects::nonNull)
+						.filter(r -> esEstadoFinalizado(r.getEstado())).toList();
+
 				LocalDateTime haceUnMesConMargen = LocalDateTime.now().minusMonths(1);
-				List<ReservaUltimoMesRow> reservasUltimoMes = reservas.stream().filter(Objects::nonNull)
-						.filter(r -> esEstadoFinalizado(r.getEstado()))
+				List<ReservaUltimoMesRow> reservasUltimoMes = reservasFinalizadas.stream()
 						.filter(r -> {
 							LocalDateTime fechaHora = obtenerFechaReferenciaReserva(r);
 							return fechaHora != null && !fechaHora.isBefore(haceUnMesConMargen);
@@ -100,13 +102,13 @@ public class Estadisticas extends BorderPane {
 								r.getFechaInicio(),
 								r.getFechaFin(), r.getEstado())).toList();
 
-				Map<String, List<Reserva>> reservasPorProducto = reservas.stream().filter(Objects::nonNull)
+				Map<String, List<Reserva>> reservasPorProducto = reservasFinalizadas.stream()
 						.filter(r -> r.getProducto() != null)
 						.collect(Collectors.groupingBy(
 								r -> r.getProducto().getNombre() != null ? r.getProducto().getNombre() : "Sin producto"));
 
 				Map<Integer, Double> valoracionMediaPorProductoId = new HashMap<>();
-				Set<Integer> productosSinValoracion = reservas.stream().filter(Objects::nonNull)
+				Set<Integer> productosSinValoracion = reservasFinalizadas.stream()
 						.map(Reserva::getProducto).filter(Objects::nonNull)
 						.filter(p -> p.getValoracionMedia() == null || p.getValoracionMedia() == 0.0)
 						.map(Producto::getId).collect(Collectors.toSet());
@@ -129,10 +131,12 @@ public class Estadisticas extends BorderPane {
 					String producto = entry.getKey();
 					long totalReservas = entry.getValue().size();
 
-					double media = entry.getValue().stream().map(Reserva::getProducto).filter(Objects::nonNull)
-							.map(p -> obtenerValoracionMediaProducto(p.getId(), p.getValoracionMedia(),
-									valoracionMediaPorProductoId))
-							.filter(Objects::nonNull).mapToDouble(Double::doubleValue).average().orElse(0.0);
+						double media = entry.getValue().stream().map(Reserva::getProducto).filter(Objects::nonNull)
+								.map(p -> obtenerValoracionMediaProducto(p.getId(), p.getValoracionMedia(),
+										valoracionMediaPorProductoId))
+								.map(Estadisticas.this::normalizarValoracion)
+								.filter(Objects::nonNull)
+								.mapToDouble(Double::doubleValue).average().orElse(0.0);
 
 					return new ValoracionMediaRow(producto, totalReservas, String.format("%.2f", media));
 				}).sorted(Comparator.comparing(ValoracionMediaRow::getProducto)).toList();
@@ -315,6 +319,13 @@ public class Estadisticas extends BorderPane {
 		Double valoracion = valoracionEnReserva;
 
 		cacheValoraciones.put(productoId, valoracion);
+		return valoracion;
+	}
+
+	private Double normalizarValoracion(Double valoracion) {
+		if (valoracion == null || valoracion <= 0.0) {
+			return null;
+		}
 		return valoracion;
 	}
 

@@ -8,6 +8,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
+import java.util.Objects;
+
 public class AdminInterface extends BorderPane{
 	
 	Image imagen;
@@ -18,7 +20,7 @@ public class AdminInterface extends BorderPane{
 	public AdminInterface() {
 		
 		//Logo
-		imagen = new Image("file:src/resources/img/Logo_RentHub.png");
+		imagen = new Image(Objects.requireNonNull(getClass().getResource("/img/Logo_RentHub.png")).toExternalForm());
 		logo = new ImageView(imagen);
 
 		logo.setFitWidth(200);

@@ -17,6 +17,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.Objects;
+
 public class InicioSesion extends BorderPane {
 
 	Image imagen;
@@ -32,7 +34,7 @@ public class InicioSesion extends BorderPane {
 	public InicioSesion() {
 		// Logo
 //		stream = ClassLoader.getSystemResourceAsStream("img/Logo_RentHub.png");
-		imagen = new Image("file:src/resources/img/Logo_RentHub.png");
+		Image imagen = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/img/Logo_RentHub.png")));
 		logo = new ImageView(imagen);
 
 		logo.setFitWidth(200);
@@ -78,10 +80,7 @@ public class InicioSesion extends BorderPane {
 		btnSesion.setLayoutX(50);
 		btnSesion.setLayoutY(50);
 		btnSesion.setOnAction(e -> iniciarSesion());
-		btnSesion.setStyle(
-			    "-fx-background-color: #31c533;" +
-			    "-fx-text-fill: white;"
-			);
+		btnSesion.setStyle("-fx-background-color: #31c533;" + "-fx-text-fill: white;");
 
 		// Layout
 		contenedor = new VBox(12);
@@ -107,11 +106,11 @@ public class InicioSesion extends BorderPane {
 			SesionAdmin.setIdActual(login.getId());
 			SesionAdmin.setUsuarioActual(usuario);
 			SesionAdmin.setNombreActual(login.getNombre());
-			
+
 			SceneManager.mostrarInterfazAdministrador();
 		} else {
-			lblMensaje.setText(loginResult.getUserMessage() != null ? loginResult.getUserMessage()
-					: "No se pudo iniciar sesión.");
+			lblMensaje.setText(
+					loginResult.getUserMessage() != null ? loginResult.getUserMessage() : "No se pudo iniciar sesión.");
 
 		}
 	}
